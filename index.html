@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0A0A0F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SM4A4L">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<title>SM4A4L | Auditoría Vial</title>
+<link rel="preconnect" href="https://unpkg.com">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+:root {
+  --neon-amber: #FF6B00;
+  --neon-cyan: #00F0FF;
+  --dark-bg: #0A0A0F;
+  --panel-bg: #15151E;
+  --panel-bg-2: #1F1F2B;
+  --border: rgba(255, 107, 0, 0.3);
+  --border-soft: rgba(255, 255, 255, 0.08);
+  --text: #E0E0E0;
+  --text-dim: #8a8a99;
+  --red: #EF4444;
+  --orange: #F97316;
+  --yellow: #EAB308;
+  --lime: #84CC16;
+  --green: #22C55E;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+  background: var(--dark-bg);
+  color: var(--text);
+  overflow: hidden;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.font-mono { font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace; }
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Header */
+header {
+  padding: calc(var(--safe-top) + 12px) 16px 12px;
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--border-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  z-index: 10;
+}
+header .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+header .brand-logo {
+  width: 32px; height: 32px;
+  border: 2px solid var(--neon-amber);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 900;
+  color: var(--neon-amber);
+  font-size: 14px;
+}
+header .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+header .brand-text .title { font-weight: 800; font-size: 14px; letter-spacing: 0.5px; }
+header .brand-text .subtitle { font-size: 10px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 1px; }
+header .header-actions { display: flex; gap: 8px; }
+header .icon-btn {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: var(--panel-bg-2);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+
+/* Main content */
+main {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+.view { display: none; padding: 16px 16px 24px; min-height: 100%; }
+.view.active { display: block; }
+.view.no-pad { padding: 0; }
+
+/* Bottom nav */
+nav.tabs {
+  display: flex;
+  background: var(--panel-bg);
+  border-top: 1px solid var(--border-soft);
+  padding-bottom: var(--safe-bottom);
+  flex-shrink: 0;
+}
+nav.tabs button {
+  flex: 1;
+  padding: 10px 4px 8px;
+  background: transparent;
+  border: 0;
+  color: var(--text-dim);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  font-weight: 600;
+}
+nav.tabs button.active { color: var(--neon-amber); }
+nav.tabs button svg { width: 22px; height: 22px; }
+
+/* Cards & form */
+.card {
+  background: var(--panel-bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.card.accent { border-color: var(--border); box-shadow: 0 0 24px rgba(255, 107, 0, 0.06); }
+.card-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  letter-spacing: 1.5px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title .num {
+  background: var(--neon-amber);
+  color: #000;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800;
+  font-size: 11px;
+}
+
+label.field { display: block; margin-bottom: 14px; }
+label.field .label-text {
+  display: block;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+input[type="text"], textarea, select {
+  width: 100%;
+  background: var(--panel-bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+}
+input[type="text"]:focus, textarea:focus, select:focus {
+  outline: 0;
+  border-color: var(--neon-amber);
+}
+textarea { resize: vertical; min-height: 80px; }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  border: 0;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 15px;
+}
+.btn.primary {
+  background: var(--neon-amber);
+  color: #000;
+}
+.btn.primary:disabled { opacity: 0.4; }
+.btn.secondary {
+  background: var(--panel-bg-2);
+  color: var(--text);
+  border: 1px solid var(--border-soft);
+}
+.btn.cyan {
+  background: transparent;
+  color: var(--neon-cyan);
+  border: 1px solid var(--neon-cyan);
+}
+.btn.danger {
+  background: transparent;
+  color: var(--red);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+.btn.full { width: 100%; }
+.btn.icon-only { padding: 12px; }
+.btn-row { display: flex; gap: 10px; }
+.btn-row .btn { flex: 1; }
+
+/* Photo */
+.photo-area {
+  border: 2px dashed var(--border-soft);
+  border-radius: 12px;
+  padding: 24px 12px;
+  text-align: center;
+  background: var(--panel-bg-2);
+  position: relative;
+  min-height: 160px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.photo-area.has-photo { padding: 0; border-style: solid; border-color: var(--border); overflow: hidden; }
+.photo-area .hint { color: var(--text-dim); font-size: 13px; margin-top: 8px; }
+.photo-area input[type="file"] { display: none; }
+.photo-area img { display: block; width: 100%; height: 220px; object-fit: cover; }
+.photo-area .photo-overlay {
+  position: absolute; top: 8px; right: 8px;
+  display: flex; gap: 6px;
+}
+.photo-area .photo-overlay button {
+  background: rgba(0,0,0,0.7);
+  border: 1px solid var(--border-soft);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.photo-area .photo-icon { font-size: 36px; color: var(--neon-amber); }
+
+/* Location */
+.location-display {
+  background: var(--panel-bg-2);
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.location-display .coords { color: var(--neon-cyan); }
+.location-display .loc-empty { color: var(--text-dim); }
+
+/* Type selector */
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.type-grid button {
+  background: var(--panel-bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 14px 6px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.type-grid button.active {
+  border-color: var(--neon-amber);
+  background: rgba(255, 107, 0, 0.1);
+  color: var(--neon-amber);
+}
+.type-grid button svg { width: 22px; height: 22px; }
+
+/* Matrix */
+.cat {
+  background: var(--panel-bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.cat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  cursor: pointer;
+  background: var(--panel-bg);
+}
+.cat-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cat-header .cat-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--text-dim);
+}
+.cat-header .cat-progress {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.cat-body {
+  padding: 0 16px 12px;
+  border-top: 1px solid var(--border-soft);
+  display: none;
+}
+.cat.open .cat-body { display: block; }
+.cat.open .cat-header .chev { transform: rotate(180deg); }
+.cat-header .chev { transition: transform 0.2s; }
+
+.item {
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--border-soft);
+}
+.item:last-child { border-bottom: 0; }
+.item .item-label {
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.score-row { display: flex; gap: 6px; }
+.score-btn {
+  flex: 1;
+  height: 38px;
+  border-radius: 8px;
+  background: var(--panel-bg-2);
+  border: 1px solid var(--border-soft);
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.score-btn.active[data-v="0"] { background: var(--red); color: #fff; border-color: var(--red); }
+.score-btn.active[data-v="1"] { background: var(--orange); color: #000; border-color: var(--orange); }
+.score-btn.active[data-v="2"] { background: var(--yellow); color: #000; border-color: var(--yellow); }
+.score-btn.active[data-v="3"] { background: var(--lime); color: #000; border-color: var(--lime); }
+.score-btn.active[data-v="4"] { background: var(--green); color: #000; border-color: var(--green); }
+
+/* Result */
+.result-hero {
+  text-align: center;
+  padding: 20px 0;
+}
+.result-hero .ring {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  margin: 0 auto 16px;
+}
+.result-hero .ring svg { transform: rotate(-90deg); }
+.result-hero .ring circle { fill: none; stroke-width: 10; }
+.result-hero .ring .bg { stroke: rgba(255,255,255,0.08); }
+.result-hero .ring .fg { stroke: var(--neon-amber); stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+.result-hero .score-num {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+.result-hero .score-num .v {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1;
+}
+.result-hero .score-num .max { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+.result-hero .level-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 6px;
+}
+.result-hero .priority {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.cat-bars { display: flex; flex-direction: column; gap: 10px; }
+.cat-bar { }
+.cat-bar .cb-top {
+  display: flex; justify-content: space-between;
+  font-size: 13px; margin-bottom: 5px;
+}
+.cat-bar .cb-val { font-family: 'JetBrains Mono', monospace; }
+.cat-bar .cb-track {
+  height: 6px;
+  background: var(--panel-bg-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.cat-bar .cb-fill { height: 100%; border-radius: 999px; transition: width 0.4s; }
+
+.recs { display: flex; flex-direction: column; gap: 8px; }
+.rec {
+  background: var(--panel-bg-2);
+  border-left: 3px solid var(--neon-amber);
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.rec .rec-cat {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--neon-amber);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 3px;
+}
+
+/* Map */
+#map { height: 100%; width: 100%; background: var(--panel-bg); }
+.map-wrap { position: relative; height: 100%; }
+.map-legend {
+  position: absolute;
+  bottom: 16px; left: 16px;
+  background: rgba(10, 10, 15, 0.92);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 11px;
+  z-index: 500;
+  backdrop-filter: blur(8px);
+}
+.map-legend .lg-row { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+.map-legend .lg-dot { width: 10px; height: 10px; border-radius: 50%; }
+.map-empty {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: var(--text-dim);
+  z-index: 600;
+  pointer-events: none;
+}
+
+/* List */
+.eval-item {
+  background: var(--panel-bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 12px;
+}
+.eval-item .thumb {
+  width: 72px; height: 72px;
+  border-radius: 8px;
+  background: var(--panel-bg-2);
+  flex-shrink: 0;
+  background-size: cover;
+  background-position: center;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-dim);
+}
+.eval-item .body { flex: 1; min-width: 0; }
+.eval-item .top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 4px;
+}
+.eval-item .type-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+}
+.eval-item .level-pill {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+}
+.eval-item .meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.eval-item .actions {
+  display: flex; gap: 8px;
+}
+.eval-item .actions button {
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.eval-item .actions button.danger { color: var(--red); border-color: rgba(239, 68, 68, 0.3); }
+
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--text-dim);
+}
+.empty-state svg { width: 56px; height: 56px; opacity: 0.3; margin-bottom: 12px; }
+.empty-state h3 { color: var(--text); font-size: 16px; margin-bottom: 6px; }
+
+/* Modal */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 1000;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+}
+.modal-backdrop.active { display: flex; }
+.modal {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+  padding: 20px;
+  margin-bottom: var(--safe-bottom);
+}
+.modal h3 { margin-bottom: 8px; font-size: 17px; }
+.modal p { color: var(--text-dim); font-size: 14px; margin-bottom: 16px; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(80px + var(--safe-bottom));
+  transform: translateX(-50%);
+  background: var(--panel-bg);
+  color: var(--text);
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  font-size: 13px;
+  z-index: 2000;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+.toast.error { border-color: var(--red); color: #fff; }
+
+/* Util */
+.text-center { text-align: center; }
+.muted { color: var(--text-dim); font-size: 13px; }
+.divider { height: 1px; background: var(--border-soft); margin: 12px 0; }
+
+/* Marker styles for Leaflet */
+.risk-marker {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.4);
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <div class="brand">
+      <div class="brand-logo">SM</div>
+      <div class="brand-text">
+        <div class="title">SM4A4L</div>
+        <div class="subtitle">Auditoría Vial</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="btn-export" title="Exportar datos">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-import" title="Importar datos">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- VIEW: NEW EVALUATION -->
+    <section class="view active" id="view-new">
+      <div class="card accent">
+        <div class="card-title"><span class="num">1</span> Evidencia fotográfica</div>
+        <div class="photo-area" id="photo-area">
+          <input type="file" id="photo-input" accept="image/*" capture="environment">
+          <svg class="photo-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <div class="hint">Tocá para tomar o cargar foto</div>
+        </div>
+      </div>
+
+      <div class="card accent">
+        <div class="card-title"><span class="num">2</span> Ubicación</div>
+        <div class="location-display" id="location-display">
+          <span class="loc-empty">Sin ubicación</span>
+        </div>
+        <div class="btn-row" style="margin-top: 10px;">
+          <button class="btn secondary" id="btn-locate">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/></svg>
+            Usar GPS
+          </button>
+          <button class="btn secondary" id="btn-pick-map">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Mapa
+          </button>
+        </div>
+      </div>
+
+      <div class="card accent">
+        <div class="card-title"><span class="num">3</span> Tipo de punto</div>
+        <div class="type-grid" id="type-grid">
+          <button data-type="interseccion">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/></svg>
+            Intersección
+          </button>
+          <button data-type="tramo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M9 6l3-3 3 3M9 18l3 3 3-3"/></svg>
+            Tramo
+          </button>
+          <button data-type="curva">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21c8 0 14-6 14-14"/><path d="M19 7l-3-3M19 7l-3 3"/></svg>
+            Curva
+          </button>
+        </div>
+      </div>
+
+      <div class="card accent">
+        <div class="card-title"><span class="num">4</span> Matriz de evaluación</div>
+        <p class="muted" style="margin-bottom: 12px;">0 = crítico · 4 = óptimo</p>
+        <div id="matrix"></div>
+      </div>
+
+      <div class="card accent">
+        <div class="card-title"><span class="num">5</span> Observaciones</div>
+        <textarea id="observations" placeholder="Notas adicionales del relevamiento (opcional)"></textarea>
+      </div>
+
+      <div class="btn-row" style="margin-top: 16px;">
+        <button class="btn secondary" id="btn-clear">Limpiar</button>
+        <button class="btn primary" id="btn-save">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Generar diagnóstico
+        </button>
+      </div>
+    </section>
+
+    <!-- VIEW: RESULT -->
+    <section class="view" id="view-result">
+      <div class="card accent">
+        <div class="result-hero">
+          <div class="ring">
+            <svg width="160" height="160">
+              <circle class="bg" cx="80" cy="80" r="70"></circle>
+              <circle class="fg" cx="80" cy="80" r="70" stroke-dasharray="439.82" stroke-dashoffset="439.82" id="result-ring"></circle>
+            </svg>
+            <div class="score-num">
+              <div class="v" id="result-score">0.0</div>
+              <div class="max">/ 4.0</div>
+            </div>
+          </div>
+          <div class="level-badge" id="result-level">—</div>
+          <div class="priority" id="result-priority">—</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Puntajes por categoría</div>
+        <div class="cat-bars" id="result-cats"></div>
+      </div>
+
+      <div class="card" id="result-recs-card">
+        <div class="card-title">Recomendaciones</div>
+        <div class="recs" id="result-recs"></div>
+      </div>
+
+      <div class="card" id="result-photo-card" style="display:none;">
+        <div class="card-title">Evidencia</div>
+        <img id="result-photo" style="width:100%; border-radius:8px;">
+      </div>
+
+      <div class="btn-row" style="margin-top: 16px;">
+        <button class="btn secondary" id="btn-back-edit">Editar</button>
+        <button class="btn cyan" id="btn-pdf">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          PDF
+        </button>
+      </div>
+    </section>
+
+    <!-- VIEW: MAP -->
+    <section class="view no-pad" id="view-map">
+      <div class="map-wrap">
+        <div id="map"></div>
+        <div class="map-legend">
+          <div class="lg-row"><span class="lg-dot" style="background: var(--red);"></span> Crítico</div>
+          <div class="lg-row"><span class="lg-dot" style="background: var(--orange);"></span> Riesgo moderado</div>
+          <div class="lg-row"><span class="lg-dot" style="background: var(--lime);"></span> Aceptable</div>
+          <div class="lg-row"><span class="lg-dot" style="background: var(--green);"></span> Óptimo</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: LIST -->
+    <section class="view" id="view-list">
+      <h2 style="margin-bottom: 14px; font-size: 18px;">Evaluaciones guardadas</h2>
+      <div id="list-container"></div>
+    </section>
+  </main>
+
+  <nav class="tabs">
+    <button data-view="view-new" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nueva
+    </button>
+    <button data-view="view-map">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+      Mapa
+    </button>
+    <button data-view="view-list">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Listado
+    </button>
+  </nav>
+</div>
+
+<!-- Map picker modal -->
+<div class="modal-backdrop" id="modal-map">
+  <div class="modal">
+    <h3>Elegí la ubicación</h3>
+    <p>Movete por el mapa y tocá para fijar el punto.</p>
+    <div id="picker-map" style="height: 300px; border-radius: 8px; overflow: hidden;"></div>
+    <div class="btn-row" style="margin-top: 14px;">
+      <button class="btn secondary" id="picker-cancel">Cancelar</button>
+      <button class="btn primary" id="picker-confirm">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm modal -->
+<div class="modal-backdrop" id="modal-confirm">
+  <div class="modal">
+    <h3 id="confirm-title">Confirmar</h3>
+    <p id="confirm-msg">¿Estás seguro?</p>
+    <div class="btn-row">
+      <button class="btn secondary" id="confirm-cancel">Cancelar</button>
+      <button class="btn danger" id="confirm-ok">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="import-input" accept="application/json" style="display:none;">
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script>
+/* =========================================================================
+   DATA: matrix definition + recommendations
+   ========================================================================= */
+const MATRIX = [
+  {
+    id: 'pavimento',
+    label: 'Pavimento',
+    color: '#FF6B00',
+    items: [
+      { id: 'pav1', label: 'Estado de superficie',
+        rec: 'Reparar superficie de pavimento. Aplicar recubrimiento antideslizante en zonas de frenado.' },
+      { id: 'pav2', label: 'Baches y defectos',
+        rec: 'Reparar baches, grietas y desniveles. Nivelar tapas de servicios al ras de la calzada.' },
+      { id: 'pav3', label: 'Drenaje superficial',
+        rec: 'Mejorar sistema de drenaje para evitar acumulación de agua que reduce la fricción.' }
+    ]
+  },
+  {
+    id: 'geometria',
+    label: 'Geometría',
+    color: '#00F0FF',
+    items: [
+      { id: 'geo1', label: 'Radio de curva',
+        rec: 'Revisar radio de curva. Reforzar señalización anticipada de advertencia y reductor de velocidad si corresponde.' },
+      { id: 'geo2', label: 'Peralte adecuado',
+        rec: 'Corregir peralte para mejorar adherencia y trayectoria en curva.' },
+      { id: 'geo3', label: 'Ancho de carril',
+        rec: 'Evaluar ampliación de calzada o redistribución de carriles para asegurar espacio operativo del motociclista.' }
+    ]
+  },
+  {
+    id: 'intersecciones',
+    label: 'Intersecciones',
+    color: '#A855F7',
+    items: [
+      { id: 'int1', label: 'Visibilidad',
+        rec: 'Despejar conos de visión: retirar vegetación, mobiliario urbano o vehículos estacionados que obstruyan la visual en la aproximación.' },
+      { id: 'int2', label: 'Señalización',
+        rec: 'Renovar señalización vertical y horizontal. Usar pintura antideslizante en marcas viales.' }
+    ]
+  },
+  {
+    id: 'lateral',
+    label: 'Seguridad lateral',
+    color: '#EF4444',
+    items: [
+      { id: 'lat1', label: 'Obstáculos',
+        rec: 'Retirar obstáculos rígidos próximos a la calzada o reubicarlos a 1.5 m mín. de distancia. Considerar zona de recuperación de 4 m.' },
+      { id: 'lat2', label: 'Tipo de barreras',
+        rec: 'Sustituir barreras tipo flex-beam por sistemas con protección para motociclistas (MPS) o equivalente.' }
+    ]
+  }
+];
+const ALL_ITEMS = MATRIX.flatMap(c => c.items.map(i => ({ ...i, category: c.id, categoryLabel: c.label, color: c.color })));
+const MAX = 4;
+
+/* =========================================================================
+   STATE
+   ========================================================================= */
+const state = {
+  editingId: null,
+  photo: null,         // dataURL
+  lat: null,
+  lng: null,
+  type: null,
+  scores: {},
+  observations: '',
+  evaluations: []
+};
+
+/* =========================================================================
+   IndexedDB
+   ========================================================================= */
+const DB_NAME = 'sm4all';
+const DB_VERSION = 1;
+let db = null;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      const d = req.result;
+      if (!d.objectStoreNames.contains('evaluations')) {
+        const s = d.createObjectStore('evaluations', { keyPath: 'id' });
+        s.createIndex('createdAt', 'createdAt');
+      }
+    };
+    req.onsuccess = () => { db = req.result; resolve(db); };
+    req.onerror = () => reject(req.error);
+  });
+}
+function dbAll() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('evaluations', 'readonly');
+    const req = tx.objectStore('evaluations').getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+function dbPut(rec) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('evaluations', 'readwrite');
+    tx.objectStore('evaluations').put(rec);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+function dbDel(id) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('evaluations', 'readwrite');
+    tx.objectStore('evaluations').delete(id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+function dbGet(id) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('evaluations', 'readonly');
+    const req = tx.objectStore('evaluations').get(id);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+/* =========================================================================
+   UTILITIES
+   ========================================================================= */
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function fmtDate(ts) {
+  const d = new Date(ts);
+  return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
+    ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+}
+function fmtCoords(lat, lng) {
+  return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+}
+function toast(msg, type) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type === 'error' ? ' error' : '');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+function setBtnLoading(btn, loading, originalText) {
+  if (loading) {
+    btn.dataset.orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = 'Procesando...';
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = btn.dataset.orig || originalText;
+  }
+}
+
+/* Score → level */
+function levelFromScore(score) {
+  if (score >= 3.5) return { key: 'optimo', label: 'Óptimo', color: '#22C55E', priority: 'Mantenimiento preventivo' };
+  if (score >= 2.5) return { key: 'aceptable', label: 'Aceptable', color: '#84CC16', priority: 'Mejoras recomendadas' };
+  if (score >= 1.5) return { key: 'moderado', label: 'Riesgo moderado', color: '#F97316', priority: 'Intervención prioritaria' };
+  return { key: 'critico', label: 'Crítico', color: '#EF4444', priority: 'Intervención urgente' };
+}
+function calcScores(scores) {
+  const cats = {};
+  let total = 0, count = 0;
+  MATRIX.forEach(cat => {
+    const vals = cat.items.map(i => scores[i.id]).filter(v => typeof v === 'number');
+    if (vals.length) {
+      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+      cats[cat.id] = { avg, count: vals.length };
+      total += vals.reduce((a, b) => a + b, 0);
+      count += vals.length;
+    } else {
+      cats[cat.id] = { avg: 0, count: 0 };
+    }
+  });
+  const totalAvg = count ? total / count : 0;
+  return { total: totalAvg, cats, answered: count, totalItems: ALL_ITEMS.length };
+}
+function buildRecommendations(scores) {
+  const recs = [];
+  ALL_ITEMS.forEach(it => {
+    const v = scores[it.id];
+    if (typeof v === 'number' && v <= 1) {
+      recs.push({ category: it.categoryLabel, color: it.color, item: it.label, text: it.rec });
+    }
+  });
+  return recs;
+}
+
+/* Image resize for storage */
+function resizeImage(dataURL, maxDim = 1200, quality = 0.82) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        const r = Math.min(maxDim / width, maxDim / height);
+        width = Math.round(width * r);
+        height = Math.round(height * r);
+      }
+      const c = document.createElement('canvas');
+      c.width = width; c.height = height;
+      c.getContext('2d').drawImage(img, 0, 0, width, height);
+      resolve(c.toDataURL('image/jpeg', quality));
+    };
+    img.src = dataURL;
+  });
+}
+function readFile(file) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result);
+    fr.onerror = () => reject(fr.error);
+    fr.readAsDataURL(file);
+  });
+}
+
+/* =========================================================================
+   UI: NAV
+   ========================================================================= */
+function showView(viewId) {
+  $$('.view').forEach(v => v.classList.toggle('active', v.id === viewId));
+  $$('nav.tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === viewId));
+  if (viewId === 'view-map') setTimeout(initMainMap, 50);
+  if (viewId === 'view-list') renderList();
+}
+$$('nav.tabs button').forEach(btn => {
+  btn.addEventListener('click', () => showView(btn.dataset.view));
+});
+
+/* =========================================================================
+   UI: NEW EVALUATION FORM
+   ========================================================================= */
+function renderMatrix() {
+  const root = $('#matrix');
+  root.innerHTML = MATRIX.map((cat, idx) => `
+    <div class="cat ${idx === 0 ? 'open' : ''}" data-cat="${cat.id}">
+      <div class="cat-header">
+        <h3><span class="cat-dot" style="background:${cat.color}"></span> ${cat.label}</h3>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="cat-progress" data-progress="${cat.id}">0/${cat.items.length}</span>
+          <svg class="chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="cat-body">
+        ${cat.items.map(it => `
+          <div class="item">
+            <div class="item-label">${it.label}</div>
+            <div class="score-row" data-item="${it.id}">
+              ${[0,1,2,3,4].map(v => `<button class="score-btn" data-v="${v}" type="button">${v}</button>`).join('')}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  root.querySelectorAll('.cat-header').forEach(h => {
+    h.addEventListener('click', () => h.parentElement.classList.toggle('open'));
+  });
+  root.querySelectorAll('.score-row').forEach(row => {
+    const itemId = row.dataset.item;
+    row.querySelectorAll('.score-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const v = +btn.dataset.v;
+        state.scores[itemId] = v;
+        row.querySelectorAll('.score-btn').forEach(b => b.classList.toggle('active', b === btn));
+        updateMatrixProgress();
+      });
+    });
+  });
+}
+function updateMatrixProgress() {
+  MATRIX.forEach(cat => {
+    const ans = cat.items.filter(i => typeof state.scores[i.id] === 'number').length;
+    const el = $(`[data-progress="${cat.id}"]`);
+    if (el) el.textContent = `${ans}/${cat.items.length}`;
+  });
+}
+
+/* Photo handling */
+$('#photo-area').addEventListener('click', (e) => {
+  if (e.target.closest('.photo-overlay')) return;
+  $('#photo-input').click();
+});
+$('#photo-input').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const raw = await readFile(file);
+    const resized = await resizeImage(raw);
+    state.photo = resized;
+    renderPhoto();
+  } catch (err) {
+    toast('No se pudo cargar la foto', 'error');
+  }
+});
+function renderPhoto() {
+  const area = $('#photo-area');
+  if (state.photo) {
+    area.classList.add('has-photo');
+    area.innerHTML = `
+      <img src="${state.photo}" alt="Evidencia">
+      <div class="photo-overlay">
+        <button id="photo-replace">Cambiar</button>
+        <button id="photo-remove">Quitar</button>
+      </div>
+      <input type="file" id="photo-input" accept="image/*" capture="environment">
+    `;
+    $('#photo-replace').addEventListener('click', (e) => { e.stopPropagation(); $('#photo-input').click(); });
+    $('#photo-remove').addEventListener('click', (e) => {
+      e.stopPropagation();
+      state.photo = null;
+      resetPhotoArea();
+    });
+    $('#photo-input').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const raw = await readFile(file);
+      state.photo = await resizeImage(raw);
+      renderPhoto();
+    });
+  } else {
+    resetPhotoArea();
+  }
+}
+function resetPhotoArea() {
+  const area = $('#photo-area');
+  area.classList.remove('has-photo');
+  area.innerHTML = `
+    <input type="file" id="photo-input" accept="image/*" capture="environment">
+    <svg class="photo-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    <div class="hint">Tocá para tomar o cargar foto</div>
+  `;
+  $('#photo-input').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const raw = await readFile(file);
+    state.photo = await resizeImage(raw);
+    renderPhoto();
+  });
+}
+
+/* Location */
+function updateLocationDisplay() {
+  const el = $('#location-display');
+  if (state.lat != null && state.lng != null) {
+    el.innerHTML = `<span>Coordenadas:</span> <span class="coords">${fmtCoords(state.lat, state.lng)}</span>`;
+  } else {
+    el.innerHTML = `<span class="loc-empty">Sin ubicación</span>`;
+  }
+}
+$('#btn-locate').addEventListener('click', () => {
+  if (!navigator.geolocation) {
+    toast('Geolocalización no disponible', 'error');
+    return;
+  }
+  const btn = $('#btn-locate');
+  setBtnLoading(btn, true);
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      state.lat = pos.coords.latitude;
+      state.lng = pos.coords.longitude;
+      updateLocationDisplay();
+      setBtnLoading(btn, false);
+      toast('Ubicación obtenida');
+    },
+    err => {
+      setBtnLoading(btn, false);
+      toast('No se pudo obtener ubicación', 'error');
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+  );
+});
+
+/* Map picker */
+let pickerMap = null;
+let pickerMarker = null;
+$('#btn-pick-map').addEventListener('click', () => {
+  $('#modal-map').classList.add('active');
+  setTimeout(() => {
+    if (!pickerMap) {
+      const center = (state.lat != null) ? [state.lat, state.lng] : [-34.6037, -58.3816];
+      pickerMap = L.map('picker-map').setView(center, 15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap',
+        maxZoom: 19
+      }).addTo(pickerMap);
+      if (state.lat != null) {
+        pickerMarker = L.marker([state.lat, state.lng]).addTo(pickerMap);
+      }
+      pickerMap.on('click', e => {
+        if (pickerMarker) pickerMap.removeLayer(pickerMarker);
+        pickerMarker = L.marker(e.latlng).addTo(pickerMap);
+      });
+    } else {
+      pickerMap.invalidateSize();
+    }
+  }, 100);
+});
+$('#picker-cancel').addEventListener('click', () => $('#modal-map').classList.remove('active'));
+$('#picker-confirm').addEventListener('click', () => {
+  if (pickerMarker) {
+    const ll = pickerMarker.getLatLng();
+    state.lat = ll.lat;
+    state.lng = ll.lng;
+    updateLocationDisplay();
+    toast('Ubicación fijada');
+  }
+  $('#modal-map').classList.remove('active');
+});
+
+/* Type */
+$$('#type-grid button').forEach(b => {
+  b.addEventListener('click', () => {
+    state.type = b.dataset.type;
+    $$('#type-grid button').forEach(x => x.classList.toggle('active', x === b));
+  });
+});
+
+/* Observations */
+$('#observations').addEventListener('input', e => state.observations = e.target.value);
+
+/* Save */
+$('#btn-save').addEventListener('click', async () => {
+  const calc = calcScores(state.scores);
+  if (calc.answered === 0) { toast('Completá al menos un ítem de la matriz', 'error'); return; }
+  if (state.lat == null) { toast('Falta ubicación', 'error'); return; }
+  if (!state.type) { toast('Elegí el tipo de punto', 'error'); return; }
+
+  const id = state.editingId || uid();
+  const rec = {
+    id,
+    createdAt: state.editingId ? (await dbGet(id))?.createdAt || Date.now() : Date.now(),
+    updatedAt: Date.now(),
+    type: state.type,
+    lat: state.lat,
+    lng: state.lng,
+    scores: { ...state.scores },
+    observations: state.observations,
+    photo: state.photo
+  };
+  await dbPut(rec);
+  state.evaluations = await dbAll();
+  showResult(rec);
+});
+
+/* Clear form */
+$('#btn-clear').addEventListener('click', () => {
+  if (state.editingId || state.photo || state.lat != null || state.type || Object.keys(state.scores).length || state.observations) {
+    confirmAction('Limpiar formulario', '¿Descartar todos los datos cargados?', () => resetForm());
+  } else {
+    resetForm();
+  }
+});
+function resetForm() {
+  state.editingId = null;
+  state.photo = null;
+  state.lat = null;
+  state.lng = null;
+  state.type = null;
+  state.scores = {};
+  state.observations = '';
+  resetPhotoArea();
+  updateLocationDisplay();
+  $$('#type-grid button').forEach(b => b.classList.remove('active'));
+  $('#observations').value = '';
+  $$('.score-btn').forEach(b => b.classList.remove('active'));
+  updateMatrixProgress();
+}
+
+/* =========================================================================
+   UI: RESULT VIEW
+   ========================================================================= */
+function showResult(rec) {
+  const calc = calcScores(rec.scores);
+  const lvl = levelFromScore(calc.total);
+  $('#result-score').textContent = calc.total.toFixed(1);
+  const ring = $('#result-ring');
+  const C = 2 * Math.PI * 70;
+  ring.style.strokeDasharray = C;
+  ring.style.strokeDashoffset = C - (calc.total / MAX) * C;
+  ring.style.stroke = lvl.color;
+  const badge = $('#result-level');
+  badge.textContent = lvl.label;
+  badge.style.background = lvl.color + '22';
+  badge.style.color = lvl.color;
+  badge.style.border = `1px solid ${lvl.color}66`;
+  $('#result-priority').textContent = `Prioridad: ${lvl.priority}`;
+
+  $('#result-cats').innerHTML = MATRIX.map(cat => {
+    const c = calc.cats[cat.id];
+    const w = c.count ? (c.avg / MAX) * 100 : 0;
+    return `
+      <div class="cat-bar">
+        <div class="cb-top">
+          <span>${cat.label}</span>
+          <span class="cb-val" style="color:${cat.color}">${c.count ? c.avg.toFixed(1) : '—'}</span>
+        </div>
+        <div class="cb-track"><div class="cb-fill" style="width:${w}%; background:${cat.color}"></div></div>
+      </div>
+    `;
+  }).join('');
+
+  const recs = buildRecommendations(rec.scores);
+  if (recs.length) {
+    $('#result-recs-card').style.display = '';
+    $('#result-recs').innerHTML = recs.map(r => `
+      <div class="rec" style="border-left-color:${r.color}">
+        <div class="rec-cat" style="color:${r.color}">${r.category} · ${r.item}</div>
+        <div>${r.text}</div>
+      </div>
+    `).join('');
+  } else {
+    $('#result-recs-card').style.display = '';
+    $('#result-recs').innerHTML = `<div class="muted">Sin recomendaciones críticas. Buen estado general.</div>`;
+  }
+
+  if (rec.photo) {
+    $('#result-photo-card').style.display = '';
+    $('#result-photo').src = rec.photo;
+  } else {
+    $('#result-photo-card').style.display = 'none';
+  }
+
+  state.editingId = rec.id;
+  showView('view-result');
+}
+
+$('#btn-back-edit').addEventListener('click', () => showView('view-new'));
+
+/* PDF */
+$('#btn-pdf').addEventListener('click', async () => {
+  if (!state.editingId) return;
+  const rec = await dbGet(state.editingId);
+  generatePDF(rec);
+});
+
+function typeLabel(t) {
+  return ({ interseccion: 'Intersección', tramo: 'Tramo', curva: 'Curva' })[t] || t;
+}
+
+async function generatePDF(rec) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const pageW = 210;
+  const margin = 15;
+  let y = margin;
+
+  const calc = calcScores(rec.scores);
+  const lvl = levelFromScore(calc.total);
+
+  // Header bar
+  doc.setFillColor(255, 107, 0);
+  doc.rect(0, 0, pageW, 8, 'F');
+  y = 18;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(20, 20, 30);
+  doc.text('SM4A4L · Reporte de Auditoría Vial', margin, y);
+  y += 6;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(120);
+  doc.text('Infraestructura Segura con Perspectiva Motociclista', margin, y);
+  y += 8;
+
+  // Meta box
+  doc.setDrawColor(220);
+  doc.setFillColor(247, 247, 250);
+  doc.roundedRect(margin, y, pageW - margin * 2, 28, 2, 2, 'FD');
+  doc.setFontSize(9);
+  doc.setTextColor(80);
+  doc.text(`ID: ${rec.id}`, margin + 4, y + 6);
+  doc.text(`Fecha: ${fmtDate(rec.createdAt)}`, margin + 4, y + 12);
+  doc.text(`Tipo: ${typeLabel(rec.type)}`, margin + 4, y + 18);
+  doc.text(`Coordenadas: ${fmtCoords(rec.lat, rec.lng)}`, margin + 4, y + 24);
+  y += 34;
+
+  // Score block
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(20, 20, 30);
+  doc.text('Diagnóstico', margin, y);
+  y += 6;
+
+  const r = hexToRgb(lvl.color);
+  doc.setFillColor(r[0], r[1], r[2]);
+  doc.roundedRect(margin, y, pageW - margin * 2, 22, 2, 2, 'F');
+  doc.setTextColor(255);
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text(calc.total.toFixed(1) + ' / 4.0', margin + 6, y + 14);
+  doc.setFontSize(11);
+  doc.text(lvl.label.toUpperCase(), margin + 60, y + 9);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text('Prioridad: ' + lvl.priority, margin + 60, y + 16);
+  y += 28;
+
+  // Categories
+  doc.setTextColor(20, 20, 30);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text('Puntajes por categoría', margin, y);
+  y += 5;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  MATRIX.forEach(cat => {
+    const c = calc.cats[cat.id];
+    const v = c.count ? c.avg.toFixed(1) : '—';
+    doc.setTextColor(60);
+    doc.text(cat.label, margin + 2, y + 4);
+    doc.text(v + ' / 4.0', pageW - margin - 30, y + 4);
+    // bar
+    doc.setFillColor(230);
+    doc.rect(margin + 50, y + 1, pageW - margin * 2 - 90, 4, 'F');
+    if (c.count) {
+      const rgb = hexToRgb(cat.color);
+      doc.setFillColor(rgb[0], rgb[1], rgb[2]);
+      doc.rect(margin + 50, y + 1, (pageW - margin * 2 - 90) * (c.avg / MAX), 4, 'F');
+    }
+    y += 7;
+  });
+  y += 4;
+
+  // Item-by-item table
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text('Detalle de evaluación', margin, y);
+  y += 6;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  ALL_ITEMS.forEach(it => {
+    const v = rec.scores[it.id];
+    doc.setTextColor(60);
+    doc.text(`${it.categoryLabel} — ${it.label}`, margin + 2, y);
+    doc.setTextColor(20);
+    doc.text(typeof v === 'number' ? `${v}/4` : '—', pageW - margin - 12, y);
+    y += 5;
+    if (y > 270) { doc.addPage(); y = margin; }
+  });
+  y += 4;
+
+  // Recommendations
+  const recs = buildRecommendations(rec.scores);
+  if (recs.length) {
+    if (y > 230) { doc.addPage(); y = margin; }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(20, 20, 30);
+    doc.text('Recomendaciones', margin, y);
+    y += 6;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    recs.forEach(r => {
+      const lines = doc.splitTextToSize(`• [${r.category}] ${r.item}: ${r.text}`, pageW - margin * 2 - 4);
+      if (y + lines.length * 4 > 280) { doc.addPage(); y = margin; }
+      doc.setTextColor(60);
+      doc.text(lines, margin + 2, y);
+      y += lines.length * 4 + 2;
+    });
+  }
+
+  // Observations
+  if (rec.observations) {
+    if (y > 240) { doc.addPage(); y = margin; }
+    y += 4;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('Observaciones', margin, y);
+    y += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    const lines = doc.splitTextToSize(rec.observations, pageW - margin * 2);
+    doc.text(lines, margin, y);
+    y += lines.length * 4 + 4;
+  }
+
+  // Photo (new page if needed)
+  if (rec.photo) {
+    doc.addPage();
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(20, 20, 30);
+    doc.text('Evidencia fotográfica', margin, margin + 4);
+    try {
+      const img = new Image();
+      img.src = rec.photo;
+      await new Promise(res => { img.onload = res; });
+      const maxW = pageW - margin * 2;
+      const maxH = 220;
+      let w = img.width, h = img.height;
+      const r2 = Math.min(maxW / w, maxH / h);
+      w = w * r2; h = h * r2;
+      doc.addImage(rec.photo, 'JPEG', margin + (maxW - w) / 2, margin + 10, w, h);
+    } catch(e) {}
+  }
+
+  // Footer on every page
+  const total = doc.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text(`SM4A4L · Página ${i} de ${total}`, margin, 290);
+    doc.text(`Generado: ${fmtDate(Date.now())}`, pageW - margin, 290, { align: 'right' });
+  }
+
+  doc.save(`SM4A4L_${rec.id}.pdf`);
+}
+
+function hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  return [parseInt(h.slice(0,2), 16), parseInt(h.slice(2,4), 16), parseInt(h.slice(4,6), 16)];
+}
+
+/* =========================================================================
+   UI: MAP
+   ========================================================================= */
+let mainMap = null;
+let mainMarkers = [];
+function initMainMap() {
+  if (!mainMap) {
+    mainMap = L.map('map').setView([-34.6037, -58.3816], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+      maxZoom: 19
+    }).addTo(mainMap);
+  } else {
+    mainMap.invalidateSize();
+  }
+  drawMarkers();
+}
+function drawMarkers() {
+  mainMarkers.forEach(m => mainMap.removeLayer(m));
+  mainMarkers = [];
+  state.evaluations.forEach(rec => {
+    const calc = calcScores(rec.scores);
+    const lvl = levelFromScore(calc.total);
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="risk-marker" style="background:${lvl.color}"></div>`,
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    });
+    const m = L.marker([rec.lat, rec.lng], { icon }).addTo(mainMap);
+    m.bindPopup(`
+      <div style="font-family: sans-serif;">
+        <div style="font-weight:700; font-size:13px;">${typeLabel(rec.type)}</div>
+        <div style="font-size:12px; color:#666;">${fmtDate(rec.createdAt)}</div>
+        <div style="margin-top:4px; font-size:13px;">
+          <strong style="color:${lvl.color}">${lvl.label}</strong> · ${calc.total.toFixed(1)}/4.0
+        </div>
+        <button onclick="window.openEval('${rec.id}')" style="margin-top:6px; padding:4px 8px; background:#FF6B00; color:#000; border:0; border-radius:4px; cursor:pointer; font-weight:700;">Abrir</button>
+      </div>
+    `);
+    mainMarkers.push(m);
+  });
+  if (state.evaluations.length === 0) {
+    if (!$('#map-empty')) {
+      const div = document.createElement('div');
+      div.id = 'map-empty';
+      div.className = 'map-empty';
+      div.innerHTML = `<h3>Sin puntos relevados</h3><div style="font-size:13px;">Cargá una evaluación para verla acá</div>`;
+      $('.map-wrap').appendChild(div);
+    }
+  } else {
+    const e = $('#map-empty'); if (e) e.remove();
+    if (mainMarkers.length === 1) {
+      mainMap.setView(mainMarkers[0].getLatLng(), 15);
+    } else {
+      const group = L.featureGroup(mainMarkers);
+      mainMap.fitBounds(group.getBounds().pad(0.2));
+    }
+  }
+}
+
+/* =========================================================================
+   UI: LIST VIEW
+   ========================================================================= */
+function renderList() {
+  const root = $('#list-container');
+  if (!state.evaluations.length) {
+    root.innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 11l3 3L22 4"/></svg>
+        <h3>Sin evaluaciones</h3>
+        <div>Empezá creando una nueva auditoría desde la pestaña Nueva.</div>
+      </div>`;
+    return;
+  }
+  const sorted = [...state.evaluations].sort((a, b) => b.createdAt - a.createdAt);
+  root.innerHTML = sorted.map(rec => {
+    const calc = calcScores(rec.scores);
+    const lvl = levelFromScore(calc.total);
+    return `
+      <div class="eval-item">
+        <div class="thumb" style="${rec.photo ? `background-image:url(${rec.photo})` : ''}">
+          ${rec.photo ? '' : '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/></svg>'}
+        </div>
+        <div class="body">
+          <div class="top">
+            <span class="type-tag">${typeLabel(rec.type)}</span>
+            <span class="level-pill" style="background:${lvl.color}22; color:${lvl.color};">${calc.total.toFixed(1)}</span>
+          </div>
+          <div class="meta">${fmtDate(rec.createdAt)} · ${fmtCoords(rec.lat, rec.lng)}</div>
+          <div class="actions">
+            <button data-action="open" data-id="${rec.id}">Abrir</button>
+            <button data-action="edit" data-id="${rec.id}">Editar</button>
+            <button data-action="del" data-id="${rec.id}" class="danger">Borrar</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  root.querySelectorAll('button[data-action]').forEach(b => {
+    b.addEventListener('click', () => {
+      const id = b.dataset.id;
+      const action = b.dataset.action;
+      if (action === 'open') openEval(id);
+      else if (action === 'edit') editEval(id);
+      else if (action === 'del') deleteEval(id);
+    });
+  });
+}
+
+async function openEval(id) {
+  const rec = await dbGet(id);
+  if (rec) showResult(rec);
+}
+window.openEval = openEval;
+
+async function editEval(id) {
+  const rec = await dbGet(id);
+  if (!rec) return;
+  state.editingId = rec.id;
+  state.photo = rec.photo;
+  state.lat = rec.lat;
+  state.lng = rec.lng;
+  state.type = rec.type;
+  state.scores = { ...rec.scores };
+  state.observations = rec.observations || '';
+  // Update UI
+  renderPhoto();
+  updateLocationDisplay();
+  $$('#type-grid button').forEach(b => b.classList.toggle('active', b.dataset.type === rec.type));
+  $('#observations').value = state.observations;
+  Object.entries(state.scores).forEach(([itemId, v]) => {
+    const row = document.querySelector(`.score-row[data-item="${itemId}"]`);
+    if (row) {
+      row.querySelectorAll('.score-btn').forEach(b => b.classList.toggle('active', +b.dataset.v === v));
+    }
+  });
+  updateMatrixProgress();
+  showView('view-new');
+}
+
+function deleteEval(id) {
+  confirmAction('Eliminar evaluación', 'No se puede deshacer. ¿Continuar?', async () => {
+    await dbDel(id);
+    state.evaluations = await dbAll();
+    renderList();
+    if (state.editingId === id) resetForm();
+    toast('Eliminada');
+  });
+}
+
+/* Confirm modal */
+let confirmCb = null;
+function confirmAction(title, msg, cb) {
+  $('#confirm-title').textContent = title;
+  $('#confirm-msg').textContent = msg;
+  confirmCb = cb;
+  $('#modal-confirm').classList.add('active');
+}
+$('#confirm-cancel').addEventListener('click', () => { $('#modal-confirm').classList.remove('active'); confirmCb = null; });
+$('#confirm-ok').addEventListener('click', () => {
+  $('#modal-confirm').classList.remove('active');
+  if (confirmCb) confirmCb();
+  confirmCb = null;
+});
+
+/* =========================================================================
+   EXPORT / IMPORT
+   ========================================================================= */
+$('#btn-export').addEventListener('click', async () => {
+  const data = {
+    schema: 'sm4all-v1',
+    exportedAt: Date.now(),
+    evaluations: state.evaluations
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `sm4all-export-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+});
+
+$('#btn-import').addEventListener('click', () => $('#import-input').click());
+$('#import-input').addEventListener('change', async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  try {
+    const text = await f.text();
+    const data = JSON.parse(text);
+    if (!data.evaluations || !Array.isArray(data.evaluations)) throw new Error('Formato inválido');
+    confirmAction('Importar evaluaciones', `Se importarán ${data.evaluations.length} registros (los IDs existentes se sobreescriben). ¿Continuar?`, async () => {
+      for (const rec of data.evaluations) {
+        if (rec.id && rec.scores) await dbPut(rec);
+      }
+      state.evaluations = await dbAll();
+      renderList();
+      toast(`Importadas ${data.evaluations.length} evaluaciones`);
+    });
+  } catch (err) {
+    toast('Archivo inválido', 'error');
+  }
+  e.target.value = '';
+});
+
+/* =========================================================================
+   INIT
+   ========================================================================= */
+async function init() {
+  try {
+    await openDB();
+    state.evaluations = await dbAll();
+  } catch (e) {
+    console.error(e);
+    toast('Error al iniciar la base de datos', 'error');
+  }
+  renderMatrix();
+  resetPhotoArea();
+  updateLocationDisplay();
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+}
+init();
+</script>
+</body>
+</html>
