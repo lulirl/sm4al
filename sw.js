@@ -1,5 +1,6 @@
-/* SM4A4L service worker — cache-first for app shell, network-first for tiles */
-const VERSION = 'sm4all-v1';
+/* SM4A4L service worker — cache-first for app shell, network-first for tiles
+ * and Supabase API (data must be fresh when online). */
+const VERSION = 'sm4all-v2';
 const APP_SHELL = [
   './',
   './index.html',
@@ -18,9 +19,7 @@ const APP_SHELL = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(VERSION).then(cache =>
-      Promise.all(APP_SHELL.map(url =>
-        cache.add(url).catch(() => null)
-      ))
+      Promise.all(APP_SHELL.map(url => cache.add(url).catch(() => null)))
     ).then(() => self.skipWaiting())
   );
 });
@@ -28,7 +27,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => !k.startsWith(VERSION)).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
@@ -50,12 +49,23 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Supabase API and storage: always fresh (do NOT cache user data)
+  if (url.hostname.endsWith('supabase.co')) {
+    return; // let browser handle directly
+  }
+
   // App shell + libs: cache-first
   event.respondWith(
     caches.match(req).then(cached => {
       if (cached) return cached;
       return fetch(req).then(res => {
-        if (res && res.status === 200 && (url.origin === self.location.origin || url.hostname === 'unpkg.com')) {
+        if (
+          res &&
+          res.status === 200 &&
+          (url.origin === self.location.origin ||
+            url.hostname === 'unpkg.com' ||
+            url.hostname === 'cdn.jsdelivr.net')
+        ) {
           const copy = res.clone();
           caches.open(VERSION).then(c => c.put(req, copy));
         }

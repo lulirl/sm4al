@@ -29,6 +29,7 @@
   --yellow: #EAB308;
   --lime: #84CC16;
   --green: #22C55E;
+  --ai: #C084FC;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -50,6 +51,71 @@ body {
   height: 100vh;
   height: 100dvh;
 }
+
+/* Boot screen */
+#boot {
+  position: fixed;
+  inset: 0;
+  background: var(--dark-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+  flex-direction: column;
+  gap: 14px;
+}
+#boot .logo {
+  width: 60px; height: 60px;
+  border: 3px solid var(--neon-amber);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 900;
+  color: var(--neon-amber);
+  font-size: 22px;
+}
+#boot .msg { color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; }
+
+/* Login view */
+#login-view {
+  position: fixed;
+  inset: 0;
+  background: var(--dark-bg);
+  z-index: 4000;
+  display: none;
+  flex-direction: column;
+  padding: calc(var(--safe-top) + 24px) 24px calc(var(--safe-bottom) + 24px);
+}
+#login-view.active { display: flex; }
+#login-view .brand-block {
+  text-align: center;
+  margin: auto auto 32px;
+}
+#login-view .brand-logo {
+  width: 64px; height: 64px;
+  border: 3px solid var(--neon-amber);
+  border-radius: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 900;
+  color: var(--neon-amber);
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+#login-view .title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+#login-view .subtitle { color: var(--text-dim); font-size: 13px; }
+#login-view .login-card {
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto auto;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+}
+#login-view h2 { font-size: 16px; margin-bottom: 8px; }
+#login-view p.muted { color: var(--text-dim); font-size: 13px; margin-bottom: 18px; }
+#login-view .footer-note { text-align: center; color: var(--text-dim); font-size: 11px; margin-top: 16px; line-height: 1.6; }
 
 /* Header */
 header {
@@ -80,16 +146,32 @@ header .brand-logo {
 header .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
 header .brand-text .title { font-weight: 800; font-size: 14px; letter-spacing: 0.5px; }
 header .brand-text .subtitle { font-size: 10px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 1px; }
-header .header-actions { display: flex; gap: 8px; }
-header .icon-btn {
-  width: 36px; height: 36px;
-  border-radius: 8px;
+header .header-actions { display: flex; gap: 8px; align-items: center; }
+header .user-chip {
+  padding: 6px 10px;
   background: var(--panel-bg-2);
   border: 1px solid var(--border-soft);
-  color: var(--text);
-  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   cursor: pointer;
 }
+
+/* Sync indicator */
+header .sync-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  margin-right: 6px;
+  display: inline-block;
+}
+header .sync-dot.offline { background: var(--text-dim); }
+header .sync-dot.syncing { background: var(--yellow); animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.4 } }
 
 /* Main content */
 main {
@@ -166,7 +248,7 @@ label.field .label-text {
   margin-bottom: 6px;
   font-weight: 600;
 }
-input[type="text"], textarea, select {
+input[type="text"], input[type="email"], textarea, select {
   width: 100%;
   background: var(--panel-bg-2);
   border: 1px solid var(--border-soft);
@@ -176,7 +258,7 @@ input[type="text"], textarea, select {
   font: inherit;
   font-size: 15px;
 }
-input[type="text"]:focus, textarea:focus, select:focus {
+input[type="text"]:focus, input[type="email"]:focus, textarea:focus, select:focus {
   outline: 0;
   border-color: var(--neon-amber);
 }
@@ -197,11 +279,8 @@ textarea { resize: vertical; min-height: 80px; }
   text-decoration: none;
   font-size: 15px;
 }
-.btn.primary {
-  background: var(--neon-amber);
-  color: #000;
-}
-.btn.primary:disabled { opacity: 0.4; }
+.btn.primary { background: var(--neon-amber); color: #000; }
+.btn.primary:disabled { opacity: 0.4; cursor: not-allowed; }
 .btn.secondary {
   background: var(--panel-bg-2);
   color: var(--text);
@@ -217,6 +296,11 @@ textarea { resize: vertical; min-height: 80px; }
   color: var(--red);
   border: 1px solid rgba(239, 68, 68, 0.4);
 }
+.btn.ai {
+  background: linear-gradient(135deg, var(--ai), #9333EA);
+  color: #fff;
+}
+.btn.ai:disabled { opacity: 0.5; }
 .btn.full { width: 100%; }
 .btn.icon-only { padding: 12px; }
 .btn-row { display: flex; gap: 10px; }
@@ -237,10 +321,7 @@ textarea { resize: vertical; min-height: 80px; }
 .photo-area .hint { color: var(--text-dim); font-size: 13px; margin-top: 8px; }
 .photo-area input[type="file"] { display: none; }
 .photo-area img { display: block; width: 100%; height: 220px; object-fit: cover; }
-.photo-area .photo-overlay {
-  position: absolute; top: 8px; right: 8px;
-  display: flex; gap: 6px;
-}
+.photo-area .photo-overlay { position: absolute; top: 8px; right: 8px; display: flex; gap: 6px; }
 .photo-area .photo-overlay button {
   background: rgba(0,0,0,0.7);
   border: 1px solid var(--border-soft);
@@ -269,11 +350,7 @@ textarea { resize: vertical; min-height: 80px; }
 .location-display .loc-empty { color: var(--text-dim); }
 
 /* Type selector */
-.type-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
+.type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .type-grid button {
   background: var(--panel-bg-2);
   border: 1px solid var(--border-soft);
@@ -312,41 +389,36 @@ textarea { resize: vertical; min-height: 80px; }
   cursor: pointer;
   background: var(--panel-bg);
 }
-.cat-header h3 {
-  font-size: 15px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.cat-header .cat-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--text-dim);
-}
-.cat-header .cat-progress {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  color: var(--text-dim);
-}
-.cat-body {
-  padding: 0 16px 12px;
-  border-top: 1px solid var(--border-soft);
-  display: none;
-}
+.cat-header h3 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+.cat-header .cat-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); }
+.cat-header .cat-progress { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); }
+.cat-body { padding: 0 16px 12px; border-top: 1px solid var(--border-soft); display: none; }
 .cat.open .cat-body { display: block; }
 .cat.open .cat-header .chev { transform: rotate(180deg); }
 .cat-header .chev { transition: transform 0.2s; }
 
-.item {
-  padding: 10px 0;
-  border-bottom: 1px dashed var(--border-soft);
-}
+.item { padding: 10px 0; border-bottom: 1px dashed var(--border-soft); }
 .item:last-child { border-bottom: 0; }
 .item .item-label {
   font-size: 13px;
   margin-bottom: 8px;
   color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.item .ai-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(192, 132, 252, 0.15);
+  color: var(--ai);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 .score-row { display: flex; gap: 6px; }
 .score-btn {
@@ -367,32 +439,92 @@ textarea { resize: vertical; min-height: 80px; }
 .score-btn.active[data-v="3"] { background: var(--lime); color: #000; border-color: var(--lime); }
 .score-btn.active[data-v="4"] { background: var(--green); color: #000; border-color: var(--green); }
 
+/* AI suggestion review block */
+.ai-banner {
+  background: linear-gradient(135deg, rgba(192, 132, 252, 0.12), rgba(147, 51, 234, 0.06));
+  border: 1px solid rgba(192, 132, 252, 0.35);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.ai-banner-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--ai);
+  font-weight: 700;
+}
+.ai-banner-header svg { width: 16px; height: 16px; }
+.ai-suggestion {
+  background: var(--panel-bg);
+  border: 1px solid rgba(192, 132, 252, 0.25);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+.ai-suggestion:last-child { margin-bottom: 0; }
+.ai-suggestion .ai-item-id {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ai);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+.ai-suggestion .ai-text {
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.ai-suggestion .ai-text textarea {
+  font-size: 13px;
+  min-height: 60px;
+  margin-bottom: 8px;
+}
+.ai-suggestion .ai-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.ai-suggestion .ai-actions button {
+  flex: 1;
+  min-width: 80px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border-soft);
+  background: var(--panel-bg-2);
+  color: var(--text);
+  font-family: inherit;
+}
+.ai-suggestion .ai-actions button.accept { border-color: var(--green); color: var(--green); }
+.ai-suggestion .ai-actions button.edit { border-color: var(--yellow); color: var(--yellow); }
+.ai-suggestion .ai-actions button.discard { border-color: var(--red); color: var(--red); }
+.ai-suggestion.resolved {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.ai-suggestion .resolved-tag {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
 /* Result */
-.result-hero {
-  text-align: center;
-  padding: 20px 0;
-}
-.result-hero .ring {
-  position: relative;
-  width: 160px;
-  height: 160px;
-  margin: 0 auto 16px;
-}
+.result-hero { text-align: center; padding: 20px 0; }
+.result-hero .ring { position: relative; width: 160px; height: 160px; margin: 0 auto 16px; }
 .result-hero .ring svg { transform: rotate(-90deg); }
 .result-hero .ring circle { fill: none; stroke-width: 10; }
 .result-hero .ring .bg { stroke: rgba(255,255,255,0.08); }
 .result-hero .ring .fg { stroke: var(--neon-amber); stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
-.result-hero .score-num {
-  position: absolute; top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-}
-.result-hero .score-num .v {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 38px;
-  font-weight: 800;
-  line-height: 1;
-}
+.result-hero .score-num { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+.result-hero .score-num .v { font-family: 'JetBrains Mono', monospace; font-size: 38px; font-weight: 800; line-height: 1; }
 .result-hero .score-num .max { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
 .result-hero .level-badge {
   display: inline-block;
@@ -405,24 +537,13 @@ textarea { resize: vertical; min-height: 80px; }
   letter-spacing: 1.5px;
   margin-bottom: 6px;
 }
-.result-hero .priority {
-  font-size: 13px;
-  color: var(--text-dim);
-}
+.result-hero .priority { font-size: 13px; color: var(--text-dim); }
 
 .cat-bars { display: flex; flex-direction: column; gap: 10px; }
 .cat-bar { }
-.cat-bar .cb-top {
-  display: flex; justify-content: space-between;
-  font-size: 13px; margin-bottom: 5px;
-}
+.cat-bar .cb-top { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
 .cat-bar .cb-val { font-family: 'JetBrains Mono', monospace; }
-.cat-bar .cb-track {
-  height: 6px;
-  background: var(--panel-bg-2);
-  border-radius: 999px;
-  overflow: hidden;
-}
+.cat-bar .cb-track { height: 6px; background: var(--panel-bg-2); border-radius: 999px; overflow: hidden; }
 .cat-bar .cb-fill { height: 100%; border-radius: 999px; transition: width 0.4s; }
 
 .recs { display: flex; flex-direction: column; gap: 8px; }
@@ -442,6 +563,21 @@ textarea { resize: vertical; min-height: 80px; }
   margin-bottom: 3px;
 }
 
+.ai-disclaimer-card {
+  border: 1px solid rgba(192, 132, 252, 0.4);
+  background: rgba(192, 132, 252, 0.05);
+  padding: 12px 14px;
+  border-radius: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.ai-disclaimer-card svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--ai); }
+
 /* Map */
 #map { height: 100%; width: 100%; background: var(--panel-bg); }
 .map-wrap { position: relative; height: 100%; }
@@ -458,15 +594,7 @@ textarea { resize: vertical; min-height: 80px; }
 }
 .map-legend .lg-row { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
 .map-legend .lg-dot { width: 10px; height: 10px; border-radius: 50%; }
-.map-empty {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  color: var(--text-dim);
-  z-index: 600;
-  pointer-events: none;
-}
+.map-empty { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--text-dim); z-index: 600; pointer-events: none; }
 
 /* List */
 .eval-item {
@@ -489,16 +617,14 @@ textarea { resize: vertical; min-height: 80px; }
   color: var(--text-dim);
 }
 .eval-item .body { flex: 1; min-width: 0; }
-.eval-item .top {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 4px;
-}
-.eval-item .type-tag {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  letter-spacing: 1px;
+.eval-item .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.eval-item .type-tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; color: var(--text-dim); letter-spacing: 1px; display: flex; gap: 6px; align-items: center; }
+.eval-item .type-tag .ai-badge {
+  background: rgba(192, 132, 252, 0.18);
+  color: var(--ai);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 9px;
 }
 .eval-item .level-pill {
   font-size: 10px;
@@ -507,14 +633,9 @@ textarea { resize: vertical; min-height: 80px; }
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
 }
-.eval-item .meta {
-  font-size: 12px;
-  color: var(--text-dim);
-  margin-bottom: 6px;
-}
-.eval-item .actions {
-  display: flex; gap: 8px;
-}
+.eval-item .meta { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+.eval-item .author { font-size: 10px; color: var(--text-dim); margin-bottom: 6px; font-style: italic; }
+.eval-item .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .eval-item .actions button {
   background: transparent;
   border: 1px solid var(--border-soft);
@@ -526,6 +647,7 @@ textarea { resize: vertical; min-height: 80px; }
   font-family: inherit;
 }
 .eval-item .actions button.danger { color: var(--red); border-color: rgba(239, 68, 68, 0.3); }
+.eval-item .actions button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .empty-state {
   text-align: center;
@@ -574,14 +696,27 @@ textarea { resize: vertical; min-height: 80px; }
   opacity: 0;
   transition: opacity 0.2s, transform 0.2s;
   pointer-events: none;
+  max-width: 90%;
+  text-align: center;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
 .toast.error { border-color: var(--red); color: #fff; }
+.toast.success { border-color: var(--green); color: #fff; }
 
 /* Util */
 .text-center { text-align: center; }
 .muted { color: var(--text-dim); font-size: 13px; }
 .divider { height: 1px; background: var(--border-soft); margin: 12px 0; }
+.spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid currentColor;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* Marker styles for Leaflet */
 .risk-marker {
@@ -594,7 +729,37 @@ textarea { resize: vertical; min-height: 80px; }
 </head>
 <body>
 
-<div id="app">
+<!-- Boot screen -->
+<div id="boot">
+  <div class="logo">SM</div>
+  <div class="msg">Iniciando...</div>
+</div>
+
+<!-- Login view (shown when not authenticated) -->
+<div id="login-view">
+  <div class="brand-block">
+    <div class="brand-logo">SM</div>
+    <div class="title">SM4A4L</div>
+    <div class="subtitle">Auditoría Vial · Perspectiva Motociclista</div>
+  </div>
+  <div class="login-card">
+    <h2>Iniciar sesión</h2>
+    <p class="muted">Te enviamos un link al mail. Tocalo desde el celular y volvés acá listo para relevar.</p>
+    <label class="field">
+      <span class="label-text">Email</span>
+      <input type="email" id="login-email" placeholder="vos@ejemplo.com" autocomplete="email" inputmode="email">
+    </label>
+    <button class="btn primary full" id="btn-send-magic-link">Enviar link mágico</button>
+    <div id="login-status" class="muted text-center" style="margin-top:14px; min-height: 18px;"></div>
+  </div>
+  <div class="footer-note">
+    Al ingresar acordás que las fotos cargadas pueden ser analizadas con IA<br>
+    de Anthropic con fines de asistencia técnica.
+  </div>
+</div>
+
+<!-- Main app -->
+<div id="app" style="display:none;">
   <header>
     <div class="brand">
       <div class="brand-logo">SM</div>
@@ -604,12 +769,7 @@ textarea { resize: vertical; min-height: 80px; }
       </div>
     </div>
     <div class="header-actions">
-      <button class="icon-btn" id="btn-export" title="Exportar datos">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      </button>
-      <button class="icon-btn" id="btn-import" title="Importar datos">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      </button>
+      <span class="user-chip" id="user-chip" title="Tu cuenta. Tocá para opciones.">—</span>
     </div>
   </header>
 
@@ -623,6 +783,21 @@ textarea { resize: vertical; min-height: 80px; }
           <svg class="photo-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           <div class="hint">Tocá para tomar o cargar foto</div>
         </div>
+        <div id="ai-button-wrap" style="margin-top: 10px; display: none;">
+          <button class="btn ai full" id="btn-analyze-ai">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L9.5 8.5L3 11l6.5 2.5L12 20l2.5-6.5L21 11l-6.5-2.5z"/></svg>
+            Analizar con IA
+          </button>
+          <p class="muted text-center" style="margin-top: 6px; font-size: 11px;">Sugerencias asistidas — vos decidís qué aceptar</p>
+        </div>
+      </div>
+
+      <div id="ai-suggestions-card" class="ai-banner" style="display:none;">
+        <div class="ai-banner-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L9.5 8.5L3 11l6.5 2.5L12 20l2.5-6.5L21 11l-6.5-2.5z"/></svg>
+          Sugerencias de IA
+        </div>
+        <div id="ai-suggestions-list"></div>
       </div>
 
       <div class="card accent">
@@ -675,7 +850,7 @@ textarea { resize: vertical; min-height: 80px; }
         <button class="btn secondary" id="btn-clear">Limpiar</button>
         <button class="btn primary" id="btn-save">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Generar diagnóstico
+          Guardar y diagnosticar
         </button>
       </div>
     </section>
@@ -696,6 +871,13 @@ textarea { resize: vertical; min-height: 80px; }
           </div>
           <div class="level-badge" id="result-level">—</div>
           <div class="priority" id="result-priority">—</div>
+        </div>
+      </div>
+
+      <div id="result-ai-disclaimer" class="ai-disclaimer-card" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L9.5 8.5L3 11l6.5 2.5L12 20l2.5-6.5L21 11l-6.5-2.5z"/></svg>
+        <div>
+          Esta evaluación incluye observaciones generadas con asistencia de IA y validadas por la persona relevadora. Las decisiones técnicas son responsabilidad del usuario.
         </div>
       </div>
 
@@ -784,168 +966,136 @@ textarea { resize: vertical; min-height: 80px; }
   </div>
 </div>
 
-<input type="file" id="import-input" accept="application/json" style="display:none;">
+<!-- Account modal -->
+<div class="modal-backdrop" id="modal-account">
+  <div class="modal">
+    <h3>Mi cuenta</h3>
+    <p id="account-email" style="color: var(--text); margin-bottom: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px;">—</p>
+    <div class="btn-row">
+      <button class="btn secondary" id="account-close">Cerrar</button>
+      <button class="btn danger" id="account-logout">Cerrar sesión</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
 /* =========================================================================
-   DATA: matrix definition + recommendations
+   CONFIG — EDIT THESE TWO LINES IF NEEDED
+   ========================================================================= */
+const CONFIG = {
+  SUPABASE_URL: 'https://wnsyozomxmhnyryzjren.supabase.co',
+  SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_mCjJIhmD11F-0ryVWN2qzA_lolA86MA',
+  // Set this AFTER deploying the Cloudflare Worker. Example:
+  //   AI_PROXY_URL: 'https://sm4all-proxy.lruedalaje.workers.dev'
+  // Leave empty to disable the "Analizar con IA" button.
+  AI_PROXY_URL: 'https://sm4all-proxy.lruedalaje.workers.dev',
+};
+
+/* =========================================================================
+   DATA: matrix + recommendations
    ========================================================================= */
 const MATRIX = [
   {
-    id: 'pavimento',
-    label: 'Pavimento',
-    color: '#FF6B00',
+    id: 'pavimento', label: 'Pavimento', color: '#FF6B00',
     items: [
-      { id: 'pav1', label: 'Estado de superficie',
-        rec: 'Reparar superficie de pavimento. Aplicar recubrimiento antideslizante en zonas de frenado.' },
-      { id: 'pav2', label: 'Baches y defectos',
-        rec: 'Reparar baches, grietas y desniveles. Nivelar tapas de servicios al ras de la calzada.' },
-      { id: 'pav3', label: 'Drenaje superficial',
-        rec: 'Mejorar sistema de drenaje para evitar acumulación de agua que reduce la fricción.' }
+      { id: 'pav1', label: 'Estado de superficie', rec: 'Reparar superficie de pavimento. Aplicar recubrimiento antideslizante en zonas de frenado.' },
+      { id: 'pav2', label: 'Baches y defectos', rec: 'Reparar baches, grietas y desniveles. Nivelar tapas de servicios al ras de la calzada.' },
+      { id: 'pav3', label: 'Drenaje superficial', rec: 'Mejorar sistema de drenaje para evitar acumulación de agua que reduce la fricción.' }
     ]
   },
   {
-    id: 'geometria',
-    label: 'Geometría',
-    color: '#00F0FF',
+    id: 'geometria', label: 'Geometría', color: '#00F0FF',
     items: [
-      { id: 'geo1', label: 'Radio de curva',
-        rec: 'Revisar radio de curva. Reforzar señalización anticipada de advertencia y reductor de velocidad si corresponde.' },
-      { id: 'geo2', label: 'Peralte adecuado',
-        rec: 'Corregir peralte para mejorar adherencia y trayectoria en curva.' },
-      { id: 'geo3', label: 'Ancho de carril',
-        rec: 'Evaluar ampliación de calzada o redistribución de carriles para asegurar espacio operativo del motociclista.' }
+      { id: 'geo1', label: 'Radio de curva', rec: 'Revisar radio de curva. Reforzar señalización anticipada de advertencia y reductor de velocidad si corresponde.' },
+      { id: 'geo2', label: 'Peralte adecuado', rec: 'Corregir peralte para mejorar adherencia y trayectoria en curva.' },
+      { id: 'geo3', label: 'Ancho de carril', rec: 'Evaluar ampliación de calzada o redistribución de carriles para asegurar espacio operativo del motociclista.' }
     ]
   },
   {
-    id: 'intersecciones',
-    label: 'Intersecciones',
-    color: '#A855F7',
+    id: 'intersecciones', label: 'Intersecciones', color: '#A855F7',
     items: [
-      { id: 'int1', label: 'Visibilidad',
-        rec: 'Despejar conos de visión: retirar vegetación, mobiliario urbano o vehículos estacionados que obstruyan la visual en la aproximación.' },
-      { id: 'int2', label: 'Señalización',
-        rec: 'Renovar señalización vertical y horizontal. Usar pintura antideslizante en marcas viales.' }
+      { id: 'int1', label: 'Visibilidad', rec: 'Despejar conos de visión: retirar vegetación, mobiliario urbano o vehículos estacionados que obstruyan la visual.' },
+      { id: 'int2', label: 'Señalización', rec: 'Renovar señalización vertical y horizontal. Usar pintura antideslizante en marcas viales.' }
     ]
   },
   {
-    id: 'lateral',
-    label: 'Seguridad lateral',
-    color: '#EF4444',
+    id: 'lateral', label: 'Seguridad lateral', color: '#EF4444',
     items: [
-      { id: 'lat1', label: 'Obstáculos',
-        rec: 'Retirar obstáculos rígidos próximos a la calzada o reubicarlos a 1.5 m mín. de distancia. Considerar zona de recuperación de 4 m.' },
-      { id: 'lat2', label: 'Tipo de barreras',
-        rec: 'Sustituir barreras tipo flex-beam por sistemas con protección para motociclistas (MPS) o equivalente.' }
+      { id: 'lat1', label: 'Obstáculos', rec: 'Retirar obstáculos rígidos próximos a la calzada o reubicarlos a 1.5 m mín. de distancia. Considerar zona de recuperación de 4 m.' },
+      { id: 'lat2', label: 'Tipo de barreras', rec: 'Sustituir barreras tipo flex-beam por sistemas con protección para motociclistas (MPS) o equivalente.' }
     ]
   }
 ];
 const ALL_ITEMS = MATRIX.flatMap(c => c.items.map(i => ({ ...i, category: c.id, categoryLabel: c.label, color: c.color })));
+const ITEMS_BY_ID = Object.fromEntries(ALL_ITEMS.map(i => [i.id, i]));
+const AI_CAPABLE_ITEMS = new Set(['pav1', 'pav2', 'pav3', 'int1', 'int2']);
 const MAX = 4;
 
 /* =========================================================================
    STATE
    ========================================================================= */
 const state = {
+  user: null,
   editingId: null,
-  photo: null,         // dataURL
+  photoFile: null,         // File object (new uploads not yet uploaded to storage)
+  photoDataUrl: null,      // base64 dataURL (for preview, AI analysis, PDF)
+  photoStoragePath: null,  // path in supabase storage if loaded from cloud
   lat: null,
   lng: null,
   type: null,
   scores: {},
   observations: '',
-  evaluations: []
+  evaluations: [],
+  // AI flow:
+  aiSuggestions: [],   // [{item_id, text, status: 'pending'|'accepted'|'edited'|'discarded', finalText}]
+  aiUsed: false,       // true once any suggestion was accepted/edited
+  aiItemFlags: {},     // {itemId: true} — items currently shown as AI-flagged in UI
 };
 
 /* =========================================================================
-   IndexedDB
+   Supabase client
    ========================================================================= */
-const DB_NAME = 'sm4all';
-const DB_VERSION = 1;
-let db = null;
-
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = () => {
-      const d = req.result;
-      if (!d.objectStoreNames.contains('evaluations')) {
-        const s = d.createObjectStore('evaluations', { keyPath: 'id' });
-        s.createIndex('createdAt', 'createdAt');
-      }
-    };
-    req.onsuccess = () => { db = req.result; resolve(db); };
-    req.onerror = () => reject(req.error);
-  });
-}
-function dbAll() {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('evaluations', 'readonly');
-    const req = tx.objectStore('evaluations').getAll();
-    req.onsuccess = () => resolve(req.result || []);
-    req.onerror = () => reject(req.error);
-  });
-}
-function dbPut(rec) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('evaluations', 'readwrite');
-    tx.objectStore('evaluations').put(rec);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-function dbDel(id) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('evaluations', 'readwrite');
-    tx.objectStore('evaluations').delete(id);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-function dbGet(id) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('evaluations', 'readonly');
-    const req = tx.objectStore('evaluations').get(id);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
+const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_PUBLISHABLE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+});
 
 /* =========================================================================
    UTILITIES
    ========================================================================= */
 const $ = sel => document.querySelector(sel);
 const $$ = sel => Array.from(document.querySelectorAll(sel));
-function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
 function fmtDate(ts) {
   const d = new Date(ts);
   return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
     ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
 }
-function fmtCoords(lat, lng) {
-  return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-}
+function fmtCoords(lat, lng) { return `${lat.toFixed(5)}, ${lng.toFixed(5)}`; }
+
 function toast(msg, type) {
   const t = $('#toast');
   t.textContent = msg;
-  t.className = 'toast show' + (type === 'error' ? ' error' : '');
-  setTimeout(() => t.classList.remove('show'), 2200);
+  t.className = 'toast show' + (type === 'error' ? ' error' : type === 'success' ? ' success' : '');
+  setTimeout(() => t.classList.remove('show'), 2400);
 }
-function setBtnLoading(btn, loading, originalText) {
+
+function setBtnLoading(btn, loading, loadingLabel) {
   if (loading) {
     btn.dataset.orig = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = 'Procesando...';
+    btn.innerHTML = `<span class="spinner"></span> ${loadingLabel || 'Procesando...'}`;
   } else {
     btn.disabled = false;
-    btn.innerHTML = btn.dataset.orig || originalText;
+    if (btn.dataset.orig) btn.innerHTML = btn.dataset.orig;
   }
 }
 
-/* Score → level */
 function levelFromScore(score) {
   if (score >= 3.5) return { key: 'optimo', label: 'Óptimo', color: '#22C55E', priority: 'Mantenimiento preventivo' };
   if (score >= 2.5) return { key: 'aceptable', label: 'Aceptable', color: '#84CC16', priority: 'Mejoras recomendadas' };
@@ -966,8 +1116,7 @@ function calcScores(scores) {
       cats[cat.id] = { avg: 0, count: 0 };
     }
   });
-  const totalAvg = count ? total / count : 0;
-  return { total: totalAvg, cats, answered: count, totalItems: ALL_ITEMS.length };
+  return { total: count ? total / count : 0, cats, answered: count, totalItems: ALL_ITEMS.length };
 }
 function buildRecommendations(scores) {
   const recs = [];
@@ -980,8 +1129,7 @@ function buildRecommendations(scores) {
   return recs;
 }
 
-/* Image resize for storage */
-function resizeImage(dataURL, maxDim = 1200, quality = 0.82) {
+function resizeImage(dataURL, maxDim = 1600, quality = 0.85) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
@@ -1005,6 +1153,146 @@ function readFile(file) {
     fr.onload = () => resolve(fr.result);
     fr.onerror = () => reject(fr.error);
     fr.readAsDataURL(file);
+  });
+}
+function dataUrlToBlob(dataURL) {
+  const [meta, b64] = dataURL.split(',');
+  const mime = meta.match(/:(.*?);/)[1];
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+/* =========================================================================
+   AUTH
+   ========================================================================= */
+async function checkAuth() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    state.user = session.user;
+    showMainApp();
+    return true;
+  }
+  showLogin();
+  return false;
+}
+
+function showLogin() {
+  $('#boot').style.display = 'none';
+  $('#login-view').classList.add('active');
+  $('#app').style.display = 'none';
+}
+async function showMainApp() {
+  $('#boot').style.display = 'none';
+  $('#login-view').classList.remove('active');
+  $('#app').style.display = 'flex';
+  $('#user-chip').textContent = state.user.email || 'Usuario';
+  await loadEvaluations();
+}
+
+$('#btn-send-magic-link').addEventListener('click', async () => {
+  const email = $('#login-email').value.trim();
+  if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+    $('#login-status').textContent = 'Ingresá un email válido';
+    return;
+  }
+  const btn = $('#btn-send-magic-link');
+  setBtnLoading(btn, true, 'Enviando...');
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.href }
+  });
+  setBtnLoading(btn, false);
+  if (error) {
+    $('#login-status').textContent = `Error: ${error.message}`;
+    $('#login-status').style.color = 'var(--red)';
+  } else {
+    $('#login-status').textContent = `✓ Te mandamos el link a ${email}. Revisá tu mail (también spam).`;
+    $('#login-status').style.color = 'var(--green)';
+  }
+});
+
+// Listen for auth changes (handles magic link click)
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN' && session) {
+    state.user = session.user;
+    showMainApp();
+  } else if (event === 'SIGNED_OUT') {
+    state.user = null;
+    showLogin();
+  }
+});
+
+$('#user-chip').addEventListener('click', () => {
+  $('#account-email').textContent = state.user?.email || '';
+  $('#modal-account').classList.add('active');
+});
+$('#account-close').addEventListener('click', () => $('#modal-account').classList.remove('active'));
+$('#account-logout').addEventListener('click', async () => {
+  await supabase.auth.signOut();
+  $('#modal-account').classList.remove('active');
+});
+
+/* =========================================================================
+   DATA LAYER (Supabase)
+   ========================================================================= */
+async function loadEvaluations() {
+  const { data, error } = await supabase
+    .from('evaluations')
+    .select('*, evaluation_photos(storage_path)')
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error(error);
+    toast('No se pudieron cargar las evaluaciones', 'error');
+    state.evaluations = [];
+    return;
+  }
+  state.evaluations = data || [];
+}
+
+async function getPhotoUrl(storagePath) {
+  if (!storagePath) return null;
+  const { data, error } = await supabase.storage
+    .from('evaluation-photos')
+    .createSignedUrl(storagePath, 3600);
+  if (error) { console.error(error); return null; }
+  return data.signedUrl;
+}
+
+async function uploadPhoto(file, evaluationId) {
+  const ext = (file.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+  const path = `${state.user.id}/${evaluationId}-${Date.now()}.${ext}`;
+  const { error } = await supabase.storage
+    .from('evaluation-photos')
+    .upload(path, file, { contentType: file.type, upsert: false });
+  if (error) throw error;
+  await supabase.from('evaluation_photos').insert({
+    evaluation_id: evaluationId,
+    storage_path: path
+  });
+  return path;
+}
+
+async function deletePhotos(evaluationId) {
+  const { data: rows } = await supabase
+    .from('evaluation_photos')
+    .select('storage_path')
+    .eq('evaluation_id', evaluationId);
+  if (rows && rows.length) {
+    const paths = rows.map(r => r.storage_path);
+    await supabase.storage.from('evaluation-photos').remove(paths);
+  }
+}
+
+async function logAiDecision(evaluationId, itemId, suggestion, action, finalText) {
+  await supabase.from('ai_decisions').insert({
+    evaluation_id: evaluationId,
+    user_id: state.user.id,
+    item_id: itemId,
+    ai_suggestion: suggestion,
+    user_action: action,
+    user_final_text: finalText || null
   });
 }
 
@@ -1038,7 +1326,13 @@ function renderMatrix() {
       <div class="cat-body">
         ${cat.items.map(it => `
           <div class="item">
-            <div class="item-label">${it.label}</div>
+            <div class="item-label">
+              <span>${it.label}</span>
+              <span class="ai-flag" data-ai-flag="${it.id}" style="display:none;">
+                <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L9.5 8.5L3 11l6.5 2.5L12 20l2.5-6.5L21 11l-6.5-2.5z"/></svg>
+                IA
+              </span>
+            </div>
             <div class="score-row" data-item="${it.id}">
               ${[0,1,2,3,4].map(v => `<button class="score-btn" data-v="${v}" type="button">${v}</button>`).join('')}
             </div>
@@ -1070,49 +1364,65 @@ function updateMatrixProgress() {
     if (el) el.textContent = `${ans}/${cat.items.length}`;
   });
 }
+function setItemAiFlag(itemId, on) {
+  const flag = document.querySelector(`[data-ai-flag="${itemId}"]`);
+  if (flag) flag.style.display = on ? 'inline-flex' : 'none';
+  if (on) state.aiItemFlags[itemId] = true;
+  else delete state.aiItemFlags[itemId];
+}
 
 /* Photo handling */
+function bindPhotoInput() {
+  const input = $('#photo-input');
+  if (!input) return;
+  input.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const raw = await readFile(file);
+      const resized = await resizeImage(raw);
+      state.photoDataUrl = resized;
+      state.photoFile = dataUrlToBlob(resized);
+      state.photoFile.name = `photo-${Date.now()}.jpg`;
+      state.photoStoragePath = null; // new upload, not yet stored
+      renderPhoto();
+      // Reset AI suggestions when photo changes
+      state.aiSuggestions = [];
+      renderAiSuggestions();
+    } catch (err) {
+      console.error(err);
+      toast('No se pudo cargar la foto', 'error');
+    }
+  });
+}
 $('#photo-area').addEventListener('click', (e) => {
   if (e.target.closest('.photo-overlay')) return;
   $('#photo-input').click();
 });
-$('#photo-input').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  try {
-    const raw = await readFile(file);
-    const resized = await resizeImage(raw);
-    state.photo = resized;
-    renderPhoto();
-  } catch (err) {
-    toast('No se pudo cargar la foto', 'error');
-  }
-});
 function renderPhoto() {
   const area = $('#photo-area');
-  if (state.photo) {
+  if (state.photoDataUrl) {
     area.classList.add('has-photo');
     area.innerHTML = `
-      <img src="${state.photo}" alt="Evidencia">
+      <img src="${state.photoDataUrl}" alt="Evidencia">
       <div class="photo-overlay">
         <button id="photo-replace">Cambiar</button>
         <button id="photo-remove">Quitar</button>
       </div>
       <input type="file" id="photo-input" accept="image/*" capture="environment">
     `;
+    bindPhotoInput();
     $('#photo-replace').addEventListener('click', (e) => { e.stopPropagation(); $('#photo-input').click(); });
     $('#photo-remove').addEventListener('click', (e) => {
       e.stopPropagation();
-      state.photo = null;
+      state.photoDataUrl = null;
+      state.photoFile = null;
+      state.photoStoragePath = null;
+      state.aiSuggestions = [];
+      renderAiSuggestions();
       resetPhotoArea();
     });
-    $('#photo-input').addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const raw = await readFile(file);
-      state.photo = await resizeImage(raw);
-      renderPhoto();
-    });
+    if (CONFIG.AI_PROXY_URL) $('#ai-button-wrap').style.display = 'block';
   } else {
     resetPhotoArea();
   }
@@ -1125,13 +1435,8 @@ function resetPhotoArea() {
     <svg class="photo-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
     <div class="hint">Tocá para tomar o cargar foto</div>
   `;
-  $('#photo-input').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const raw = await readFile(file);
-    state.photo = await resizeImage(raw);
-    renderPhoto();
-  });
+  bindPhotoInput();
+  $('#ai-button-wrap').style.display = 'none';
 }
 
 /* Location */
@@ -1144,12 +1449,9 @@ function updateLocationDisplay() {
   }
 }
 $('#btn-locate').addEventListener('click', () => {
-  if (!navigator.geolocation) {
-    toast('Geolocalización no disponible', 'error');
-    return;
-  }
+  if (!navigator.geolocation) { toast('Geolocalización no disponible', 'error'); return; }
   const btn = $('#btn-locate');
-  setBtnLoading(btn, true);
+  setBtnLoading(btn, true, 'Buscando...');
   navigator.geolocation.getCurrentPosition(
     pos => {
       state.lat = pos.coords.latitude;
@@ -1176,12 +1478,9 @@ $('#btn-pick-map').addEventListener('click', () => {
       const center = (state.lat != null) ? [state.lat, state.lng] : [-34.6037, -58.3816];
       pickerMap = L.map('picker-map').setView(center, 15);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap',
-        maxZoom: 19
+        attribution: '© OpenStreetMap', maxZoom: 19
       }).addTo(pickerMap);
-      if (state.lat != null) {
-        pickerMarker = L.marker([state.lat, state.lng]).addTo(pickerMap);
-      }
+      if (state.lat != null) pickerMarker = L.marker([state.lat, state.lng]).addTo(pickerMap);
       pickerMap.on('click', e => {
         if (pickerMarker) pickerMap.removeLayer(pickerMarker);
         pickerMarker = L.marker(e.latlng).addTo(pickerMap);
@@ -1214,33 +1513,208 @@ $$('#type-grid button').forEach(b => {
 /* Observations */
 $('#observations').addEventListener('input', e => state.observations = e.target.value);
 
-/* Save */
+/* =========================================================================
+   AI INTEGRATION
+   ========================================================================= */
+$('#btn-analyze-ai').addEventListener('click', async () => {
+  if (!CONFIG.AI_PROXY_URL) {
+    toast('IA no configurada — falta AI_PROXY_URL', 'error');
+    return;
+  }
+  if (!state.photoDataUrl) {
+    toast('Cargá una foto primero', 'error');
+    return;
+  }
+  const btn = $('#btn-analyze-ai');
+  setBtnLoading(btn, true, 'Analizando...');
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { toast('Sesión expirada', 'error'); setBtnLoading(btn, false); return; }
+    const base64 = state.photoDataUrl.split(',')[1];
+    const res = await fetch(`${CONFIG.AI_PROXY_URL.replace(/\/$/, '')}/analyze`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ image_base64: base64, media_type: 'image/jpeg' })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast(`Error IA: ${err.error || res.status}`, 'error');
+      setBtnLoading(btn, false);
+      return;
+    }
+    const data = await res.json();
+    state.aiSuggestions = (data.observations || []).map(o => ({
+      ...o, status: 'pending', finalText: o.text
+    }));
+    renderAiSuggestions();
+    if (state.aiSuggestions.length === 0) {
+      toast('La IA no encontró observaciones claras en la foto');
+    } else {
+      toast(`${state.aiSuggestions.length} sugerencias generadas`, 'success');
+    }
+  } catch (err) {
+    console.error(err);
+    toast('Error de red al consultar IA', 'error');
+  } finally {
+    setBtnLoading(btn, false);
+  }
+});
+
+function renderAiSuggestions() {
+  const card = $('#ai-suggestions-card');
+  const list = $('#ai-suggestions-list');
+  if (!state.aiSuggestions.length) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  list.innerHTML = state.aiSuggestions.map((s, i) => {
+    const item = ITEMS_BY_ID[s.item_id];
+    if (!item) return '';
+    const resolved = s.status !== 'pending';
+    return `
+      <div class="ai-suggestion ${resolved ? 'resolved' : ''}" data-idx="${i}">
+        <div class="ai-item-id">${item.categoryLabel} · ${item.label}</div>
+        <div class="ai-text" data-text-wrap>
+          ${resolved ? escapeHtml(s.finalText) : escapeHtml(s.text)}
+        </div>
+        ${resolved
+          ? `<div class="resolved-tag">${({accepted:'✓ aceptada', edited:'✎ editada', discarded:'✗ descartada'})[s.status]}</div>`
+          : `<div class="ai-actions">
+              <button class="accept" data-action="accept">Aceptar</button>
+              <button class="edit" data-action="edit">Editar</button>
+              <button class="discard" data-action="discard">Descartar</button>
+            </div>`
+        }
+      </div>
+    `;
+  }).join('');
+
+  list.querySelectorAll('.ai-suggestion').forEach(el => {
+    const idx = +el.dataset.idx;
+    el.querySelectorAll('button[data-action]').forEach(b => {
+      b.addEventListener('click', () => handleAiAction(idx, b.dataset.action));
+    });
+  });
+}
+
+function handleAiAction(idx, action) {
+  const s = state.aiSuggestions[idx];
+  if (!s) return;
+  if (action === 'accept') {
+    s.status = 'accepted';
+    s.finalText = s.text;
+    appendObservation(s);
+    state.aiUsed = true;
+    setItemAiFlag(s.item_id, true);
+    renderAiSuggestions();
+  } else if (action === 'edit') {
+    const wrap = document.querySelector(`.ai-suggestion[data-idx="${idx}"] [data-text-wrap]`);
+    wrap.innerHTML = `<textarea>${escapeHtml(s.text)}</textarea>
+      <div class="ai-actions" style="margin-top:6px;">
+        <button class="accept" data-finish="save">Guardar</button>
+        <button class="discard" data-finish="cancel">Cancelar</button>
+      </div>`;
+    const ta = wrap.querySelector('textarea');
+    ta.focus();
+    wrap.querySelector('[data-finish="save"]').addEventListener('click', () => {
+      const newText = ta.value.trim();
+      if (!newText) { toast('No puede estar vacío', 'error'); return; }
+      s.status = 'edited';
+      s.finalText = newText;
+      appendObservation(s);
+      state.aiUsed = true;
+      setItemAiFlag(s.item_id, true);
+      renderAiSuggestions();
+    });
+    wrap.querySelector('[data-finish="cancel"]').addEventListener('click', () => {
+      renderAiSuggestions();
+    });
+  } else if (action === 'discard') {
+    s.status = 'discarded';
+    renderAiSuggestions();
+  }
+}
+
+function appendObservation(suggestion) {
+  const item = ITEMS_BY_ID[suggestion.item_id];
+  const tag = `[${item.categoryLabel} · ${item.label}] `;
+  const newLine = tag + suggestion.finalText;
+  const ta = $('#observations');
+  const cur = ta.value.trim();
+  ta.value = cur ? `${cur}\n${newLine}` : newLine;
+  state.observations = ta.value;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* =========================================================================
+   SAVE
+   ========================================================================= */
 $('#btn-save').addEventListener('click', async () => {
   const calc = calcScores(state.scores);
   if (calc.answered === 0) { toast('Completá al menos un ítem de la matriz', 'error'); return; }
   if (state.lat == null) { toast('Falta ubicación', 'error'); return; }
   if (!state.type) { toast('Elegí el tipo de punto', 'error'); return; }
 
-  const id = state.editingId || uid();
-  const rec = {
-    id,
-    createdAt: state.editingId ? (await dbGet(id))?.createdAt || Date.now() : Date.now(),
-    updatedAt: Date.now(),
-    type: state.type,
-    lat: state.lat,
-    lng: state.lng,
-    scores: { ...state.scores },
-    observations: state.observations,
-    photo: state.photo
-  };
-  await dbPut(rec);
-  state.evaluations = await dbAll();
-  showResult(rec);
+  const lvl = levelFromScore(calc.total);
+  const btn = $('#btn-save');
+  setBtnLoading(btn, true, 'Guardando...');
+
+  try {
+    let evalId = state.editingId;
+    const payload = {
+      user_id: state.user.id,
+      user_email: state.user.email,
+      type: state.type,
+      lat: state.lat,
+      lng: state.lng,
+      scores: state.scores,
+      observations: state.observations || null,
+      ai_used: state.aiUsed,
+      total_score: calc.total,
+      risk_level: lvl.key,
+    };
+
+    if (evalId) {
+      const { error } = await supabase.from('evaluations').update(payload).eq('id', evalId);
+      if (error) throw error;
+    } else {
+      const { data, error } = await supabase.from('evaluations').insert(payload).select().single();
+      if (error) throw error;
+      evalId = data.id;
+    }
+
+    // Upload photo if new
+    if (state.photoFile && !state.photoStoragePath) {
+      const path = await uploadPhoto(state.photoFile, evalId);
+      state.photoStoragePath = path;
+    }
+
+    // Log AI decisions
+    for (const s of state.aiSuggestions) {
+      if (s.status !== 'pending') {
+        await logAiDecision(evalId, s.item_id, s.text, s.status, s.finalText);
+      }
+    }
+
+    state.editingId = evalId;
+    await loadEvaluations();
+    const rec = state.evaluations.find(e => e.id === evalId);
+    showResult(rec);
+  } catch (err) {
+    console.error(err);
+    toast(`Error al guardar: ${err.message || 'desconocido'}`, 'error');
+  } finally {
+    setBtnLoading(btn, false);
+  }
 });
 
-/* Clear form */
+/* Clear */
 $('#btn-clear').addEventListener('click', () => {
-  if (state.editingId || state.photo || state.lat != null || state.type || Object.keys(state.scores).length || state.observations) {
+  if (state.editingId || state.photoDataUrl || state.lat != null || state.type || Object.keys(state.scores).length || state.observations || state.aiSuggestions.length) {
     confirmAction('Limpiar formulario', '¿Descartar todos los datos cargados?', () => resetForm());
   } else {
     resetForm();
@@ -1248,24 +1722,31 @@ $('#btn-clear').addEventListener('click', () => {
 });
 function resetForm() {
   state.editingId = null;
-  state.photo = null;
+  state.photoDataUrl = null;
+  state.photoFile = null;
+  state.photoStoragePath = null;
   state.lat = null;
   state.lng = null;
   state.type = null;
   state.scores = {};
   state.observations = '';
+  state.aiSuggestions = [];
+  state.aiUsed = false;
+  state.aiItemFlags = {};
   resetPhotoArea();
+  renderAiSuggestions();
   updateLocationDisplay();
   $$('#type-grid button').forEach(b => b.classList.remove('active'));
   $('#observations').value = '';
   $$('.score-btn').forEach(b => b.classList.remove('active'));
+  $$('.ai-flag').forEach(f => f.style.display = 'none');
   updateMatrixProgress();
 }
 
 /* =========================================================================
    UI: RESULT VIEW
    ========================================================================= */
-function showResult(rec) {
+async function showResult(rec) {
   const calc = calcScores(rec.scores);
   const lvl = levelFromScore(calc.total);
   $('#result-score').textContent = calc.total.toFixed(1);
@@ -1280,6 +1761,8 @@ function showResult(rec) {
   badge.style.color = lvl.color;
   badge.style.border = `1px solid ${lvl.color}66`;
   $('#result-priority').textContent = `Prioridad: ${lvl.priority}`;
+
+  $('#result-ai-disclaimer').style.display = rec.ai_used ? 'flex' : 'none';
 
   $('#result-cats').innerHTML = MATRIX.map(cat => {
     const c = calc.cats[cat.id];
@@ -1297,23 +1780,33 @@ function showResult(rec) {
 
   const recs = buildRecommendations(rec.scores);
   if (recs.length) {
-    $('#result-recs-card').style.display = '';
     $('#result-recs').innerHTML = recs.map(r => `
       <div class="rec" style="border-left-color:${r.color}">
         <div class="rec-cat" style="color:${r.color}">${r.category} · ${r.item}</div>
-        <div>${r.text}</div>
+        <div>${escapeHtml(r.text)}</div>
       </div>
     `).join('');
   } else {
-    $('#result-recs-card').style.display = '';
     $('#result-recs').innerHTML = `<div class="muted">Sin recomendaciones críticas. Buen estado general.</div>`;
   }
 
-  if (rec.photo) {
-    $('#result-photo-card').style.display = '';
-    $('#result-photo').src = rec.photo;
+  // Photo
+  const photoCard = $('#result-photo-card');
+  const storagePath = rec.evaluation_photos?.[0]?.storage_path;
+  if (storagePath) {
+    const url = await getPhotoUrl(storagePath);
+    if (url) {
+      photoCard.style.display = '';
+      $('#result-photo').src = url;
+      state._currentPhotoUrl = url;
+    } else { photoCard.style.display = 'none'; }
+  } else if (state.photoDataUrl && rec.id === state.editingId) {
+    photoCard.style.display = '';
+    $('#result-photo').src = state.photoDataUrl;
+    state._currentPhotoUrl = state.photoDataUrl;
   } else {
-    $('#result-photo-card').style.display = 'none';
+    photoCard.style.display = 'none';
+    state._currentPhotoUrl = null;
   }
 
   state.editingId = rec.id;
@@ -1322,18 +1815,42 @@ function showResult(rec) {
 
 $('#btn-back-edit').addEventListener('click', () => showView('view-new'));
 
-/* PDF */
-$('#btn-pdf').addEventListener('click', async () => {
-  if (!state.editingId) return;
-  const rec = await dbGet(state.editingId);
-  generatePDF(rec);
-});
-
+/* =========================================================================
+   PDF
+   ========================================================================= */
 function typeLabel(t) {
   return ({ interseccion: 'Intersección', tramo: 'Tramo', curva: 'Curva' })[t] || t;
 }
+function hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  return [parseInt(h.slice(0,2), 16), parseInt(h.slice(2,4), 16), parseInt(h.slice(4,6), 16)];
+}
 
-async function generatePDF(rec) {
+$('#btn-pdf').addEventListener('click', async () => {
+  if (!state.editingId) return;
+  const rec = state.evaluations.find(e => e.id === state.editingId);
+  if (!rec) return;
+  let photoDataUrl = null;
+  const storagePath = rec.evaluation_photos?.[0]?.storage_path;
+  if (storagePath) {
+    const url = await getPhotoUrl(storagePath);
+    if (url) {
+      try {
+        const blob = await (await fetch(url)).blob();
+        photoDataUrl = await new Promise((resolve) => {
+          const fr = new FileReader();
+          fr.onload = () => resolve(fr.result);
+          fr.readAsDataURL(blob);
+        });
+      } catch (e) { console.warn('No se pudo descargar la foto para el PDF', e); }
+    }
+  } else if (state.photoDataUrl) {
+    photoDataUrl = state.photoDataUrl;
+  }
+  generatePDF(rec, photoDataUrl);
+});
+
+async function generatePDF(rec, photoDataUrl) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const pageW = 210;
@@ -1343,7 +1860,6 @@ async function generatePDF(rec) {
   const calc = calcScores(rec.scores);
   const lvl = levelFromScore(calc.total);
 
-  // Header bar
   doc.setFillColor(255, 107, 0);
   doc.rect(0, 0, pageW, 8, 'F');
   y = 18;
@@ -1359,19 +1875,18 @@ async function generatePDF(rec) {
   doc.text('Infraestructura Segura con Perspectiva Motociclista', margin, y);
   y += 8;
 
-  // Meta box
   doc.setDrawColor(220);
   doc.setFillColor(247, 247, 250);
-  doc.roundedRect(margin, y, pageW - margin * 2, 28, 2, 2, 'FD');
+  doc.roundedRect(margin, y, pageW - margin * 2, 32, 2, 2, 'FD');
   doc.setFontSize(9);
   doc.setTextColor(80);
   doc.text(`ID: ${rec.id}`, margin + 4, y + 6);
-  doc.text(`Fecha: ${fmtDate(rec.createdAt)}`, margin + 4, y + 12);
+  doc.text(`Fecha: ${fmtDate(rec.created_at)}`, margin + 4, y + 12);
   doc.text(`Tipo: ${typeLabel(rec.type)}`, margin + 4, y + 18);
   doc.text(`Coordenadas: ${fmtCoords(rec.lat, rec.lng)}`, margin + 4, y + 24);
-  y += 34;
+  doc.text(`Relevador: ${rec.user_email || '—'}`, margin + 4, y + 30);
+  y += 38;
 
-  // Score block
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(13);
   doc.setTextColor(20, 20, 30);
@@ -1392,7 +1907,21 @@ async function generatePDF(rec) {
   doc.text('Prioridad: ' + lvl.priority, margin + 60, y + 16);
   y += 28;
 
-  // Categories
+  if (rec.ai_used) {
+    doc.setFillColor(192, 132, 252, 0.1);
+    doc.setDrawColor(192, 132, 252);
+    doc.roundedRect(margin, y, pageW - margin * 2, 14, 2, 2, 'FD');
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(8);
+    doc.setTextColor(120, 80, 180);
+    const lines = doc.splitTextToSize(
+      'Esta evaluación incluye observaciones generadas con asistencia de IA y validadas por la persona relevadora. Las decisiones técnicas son responsabilidad del usuario.',
+      pageW - margin * 2 - 6
+    );
+    doc.text(lines, margin + 3, y + 5);
+    y += 18;
+  }
+
   doc.setTextColor(20, 20, 30);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
@@ -1406,7 +1935,6 @@ async function generatePDF(rec) {
     doc.setTextColor(60);
     doc.text(cat.label, margin + 2, y + 4);
     doc.text(v + ' / 4.0', pageW - margin - 30, y + 4);
-    // bar
     doc.setFillColor(230);
     doc.rect(margin + 50, y + 1, pageW - margin * 2 - 90, 4, 'F');
     if (c.count) {
@@ -1418,7 +1946,6 @@ async function generatePDF(rec) {
   });
   y += 4;
 
-  // Item-by-item table
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.text('Detalle de evaluación', margin, y);
@@ -1436,7 +1963,6 @@ async function generatePDF(rec) {
   });
   y += 4;
 
-  // Recommendations
   const recs = buildRecommendations(rec.scores);
   if (recs.length) {
     if (y > 230) { doc.addPage(); y = margin; }
@@ -1447,8 +1973,8 @@ async function generatePDF(rec) {
     y += 6;
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    recs.forEach(r => {
-      const lines = doc.splitTextToSize(`• [${r.category}] ${r.item}: ${r.text}`, pageW - margin * 2 - 4);
+    recs.forEach(r2 => {
+      const lines = doc.splitTextToSize(`• [${r2.category}] ${r2.item}: ${r2.text}`, pageW - margin * 2 - 4);
       if (y + lines.length * 4 > 280) { doc.addPage(); y = margin; }
       doc.setTextColor(60);
       doc.text(lines, margin + 2, y);
@@ -1456,7 +1982,6 @@ async function generatePDF(rec) {
     });
   }
 
-  // Observations
   if (rec.observations) {
     if (y > 240) { doc.addPage(); y = margin; }
     y += 4;
@@ -1471,8 +1996,7 @@ async function generatePDF(rec) {
     y += lines.length * 4 + 4;
   }
 
-  // Photo (new page if needed)
-  if (rec.photo) {
+  if (photoDataUrl) {
     doc.addPage();
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(13);
@@ -1480,18 +2004,17 @@ async function generatePDF(rec) {
     doc.text('Evidencia fotográfica', margin, margin + 4);
     try {
       const img = new Image();
-      img.src = rec.photo;
+      img.src = photoDataUrl;
       await new Promise(res => { img.onload = res; });
       const maxW = pageW - margin * 2;
       const maxH = 220;
       let w = img.width, h = img.height;
       const r2 = Math.min(maxW / w, maxH / h);
       w = w * r2; h = h * r2;
-      doc.addImage(rec.photo, 'JPEG', margin + (maxW - w) / 2, margin + 10, w, h);
+      doc.addImage(photoDataUrl, 'JPEG', margin + (maxW - w) / 2, margin + 10, w, h);
     } catch(e) {}
   }
 
-  // Footer on every page
   const total = doc.getNumberOfPages();
   for (let i = 1; i <= total; i++) {
     doc.setPage(i);
@@ -1501,16 +2024,11 @@ async function generatePDF(rec) {
     doc.text(`Generado: ${fmtDate(Date.now())}`, pageW - margin, 290, { align: 'right' });
   }
 
-  doc.save(`SM4A4L_${rec.id}.pdf`);
-}
-
-function hexToRgb(hex) {
-  const h = hex.replace('#', '');
-  return [parseInt(h.slice(0,2), 16), parseInt(h.slice(2,4), 16), parseInt(h.slice(4,6), 16)];
+  doc.save(`SM4A4L_${rec.id.slice(0, 8)}.pdf`);
 }
 
 /* =========================================================================
-   UI: MAP
+   MAP
    ========================================================================= */
 let mainMap = null;
 let mainMarkers = [];
@@ -1518,8 +2036,7 @@ function initMainMap() {
   if (!mainMap) {
     mainMap = L.map('map').setView([-34.6037, -58.3816], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap',
-      maxZoom: 19
+      attribution: '© OpenStreetMap', maxZoom: 19
     }).addTo(mainMap);
   } else {
     mainMap.invalidateSize();
@@ -1535,14 +2052,13 @@ function drawMarkers() {
     const icon = L.divIcon({
       className: '',
       html: `<div class="risk-marker" style="background:${lvl.color}"></div>`,
-      iconSize: [22, 22],
-      iconAnchor: [11, 11]
+      iconSize: [22, 22], iconAnchor: [11, 11]
     });
     const m = L.marker([rec.lat, rec.lng], { icon }).addTo(mainMap);
     m.bindPopup(`
       <div style="font-family: sans-serif;">
-        <div style="font-weight:700; font-size:13px;">${typeLabel(rec.type)}</div>
-        <div style="font-size:12px; color:#666;">${fmtDate(rec.createdAt)}</div>
+        <div style="font-weight:700; font-size:13px;">${typeLabel(rec.type)}${rec.ai_used ? ' · IA' : ''}</div>
+        <div style="font-size:12px; color:#666;">${fmtDate(rec.created_at)}</div>
         <div style="margin-top:4px; font-size:13px;">
           <strong style="color:${lvl.color}">${lvl.label}</strong> · ${calc.total.toFixed(1)}/4.0
         </div>
@@ -1561,9 +2077,8 @@ function drawMarkers() {
     }
   } else {
     const e = $('#map-empty'); if (e) e.remove();
-    if (mainMarkers.length === 1) {
-      mainMap.setView(mainMarkers[0].getLatLng(), 15);
-    } else {
+    if (mainMarkers.length === 1) mainMap.setView(mainMarkers[0].getLatLng(), 15);
+    else {
       const group = L.featureGroup(mainMarkers);
       mainMap.fitBounds(group.getBounds().pad(0.2));
     }
@@ -1571,9 +2086,9 @@ function drawMarkers() {
 }
 
 /* =========================================================================
-   UI: LIST VIEW
+   LIST
    ========================================================================= */
-function renderList() {
+async function renderList() {
   const root = $('#list-container');
   if (!state.evaluations.length) {
     root.innerHTML = `
@@ -1584,30 +2099,34 @@ function renderList() {
       </div>`;
     return;
   }
-  const sorted = [...state.evaluations].sort((a, b) => b.createdAt - a.createdAt);
-  root.innerHTML = sorted.map(rec => {
+  // Resolve photo URLs lazily
+  root.innerHTML = state.evaluations.map(rec => {
     const calc = calcScores(rec.scores);
     const lvl = levelFromScore(calc.total);
+    const isMine = rec.user_id === state.user.id;
+    const storagePath = rec.evaluation_photos?.[0]?.storage_path;
     return `
-      <div class="eval-item">
-        <div class="thumb" style="${rec.photo ? `background-image:url(${rec.photo})` : ''}">
-          ${rec.photo ? '' : '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/></svg>'}
+      <div class="eval-item" data-id="${rec.id}">
+        <div class="thumb" data-storage-path="${storagePath || ''}">
+          ${storagePath ? '<span class="spinner"></span>' : '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/></svg>'}
         </div>
         <div class="body">
           <div class="top">
-            <span class="type-tag">${typeLabel(rec.type)}</span>
+            <span class="type-tag">${typeLabel(rec.type)} ${rec.ai_used ? '<span class="ai-badge">IA</span>' : ''}</span>
             <span class="level-pill" style="background:${lvl.color}22; color:${lvl.color};">${calc.total.toFixed(1)}</span>
           </div>
-          <div class="meta">${fmtDate(rec.createdAt)} · ${fmtCoords(rec.lat, rec.lng)}</div>
+          <div class="meta">${fmtDate(rec.created_at)} · ${fmtCoords(rec.lat, rec.lng)}</div>
+          ${!isMine ? `<div class="author">por ${escapeHtml(rec.user_email || 'otro usuario')}</div>` : ''}
           <div class="actions">
             <button data-action="open" data-id="${rec.id}">Abrir</button>
-            <button data-action="edit" data-id="${rec.id}">Editar</button>
-            <button data-action="del" data-id="${rec.id}" class="danger">Borrar</button>
+            <button data-action="edit" data-id="${rec.id}" ${isMine ? '' : 'disabled'}>Editar</button>
+            <button data-action="del" data-id="${rec.id}" class="danger" ${isMine ? '' : 'disabled'}>Borrar</button>
           </div>
         </div>
       </div>
     `;
   }).join('');
+
   root.querySelectorAll('button[data-action]').forEach(b => {
     b.addEventListener('click', () => {
       const id = b.dataset.id;
@@ -1617,46 +2136,83 @@ function renderList() {
       else if (action === 'del') deleteEval(id);
     });
   });
+
+  // Lazy load thumbnails
+  root.querySelectorAll('.thumb[data-storage-path]').forEach(async (el) => {
+    const path = el.dataset.storagePath;
+    if (!path) return;
+    const url = await getPhotoUrl(path);
+    if (url) {
+      el.style.backgroundImage = `url(${url})`;
+      el.innerHTML = '';
+    }
+  });
 }
 
 async function openEval(id) {
-  const rec = await dbGet(id);
+  const rec = state.evaluations.find(e => e.id === id);
   if (rec) showResult(rec);
 }
 window.openEval = openEval;
 
 async function editEval(id) {
-  const rec = await dbGet(id);
-  if (!rec) return;
+  const rec = state.evaluations.find(e => e.id === id);
+  if (!rec || rec.user_id !== state.user.id) return;
+  resetForm();
   state.editingId = rec.id;
-  state.photo = rec.photo;
   state.lat = rec.lat;
   state.lng = rec.lng;
   state.type = rec.type;
   state.scores = { ...rec.scores };
   state.observations = rec.observations || '';
-  // Update UI
-  renderPhoto();
+  state.aiUsed = rec.ai_used;
+
+  // Load photo from storage
+  const storagePath = rec.evaluation_photos?.[0]?.storage_path;
+  if (storagePath) {
+    state.photoStoragePath = storagePath;
+    const url = await getPhotoUrl(storagePath);
+    if (url) {
+      try {
+        const blob = await (await fetch(url)).blob();
+        state.photoDataUrl = await new Promise(res => {
+          const fr = new FileReader();
+          fr.onload = () => res(fr.result);
+          fr.readAsDataURL(blob);
+        });
+        state.photoFile = null; // already in storage
+        renderPhoto();
+      } catch (e) { console.warn(e); }
+    }
+  }
+
   updateLocationDisplay();
   $$('#type-grid button').forEach(b => b.classList.toggle('active', b.dataset.type === rec.type));
   $('#observations').value = state.observations;
   Object.entries(state.scores).forEach(([itemId, v]) => {
     const row = document.querySelector(`.score-row[data-item="${itemId}"]`);
-    if (row) {
-      row.querySelectorAll('.score-btn').forEach(b => b.classList.toggle('active', +b.dataset.v === v));
-    }
+    if (row) row.querySelectorAll('.score-btn').forEach(b => b.classList.toggle('active', +b.dataset.v === v));
   });
   updateMatrixProgress();
   showView('view-new');
 }
 
 function deleteEval(id) {
+  const rec = state.evaluations.find(e => e.id === id);
+  if (!rec || rec.user_id !== state.user.id) return;
   confirmAction('Eliminar evaluación', 'No se puede deshacer. ¿Continuar?', async () => {
-    await dbDel(id);
-    state.evaluations = await dbAll();
-    renderList();
-    if (state.editingId === id) resetForm();
-    toast('Eliminada');
+    try {
+      await deletePhotos(id);
+      const { error } = await supabase.from('evaluations').delete().eq('id', id);
+      if (error) throw error;
+      await loadEvaluations();
+      renderList();
+      if (state.editingId === id) resetForm();
+      toast('Eliminada');
+    } catch (err) {
+      console.error(err);
+      toast(`Error al eliminar: ${err.message}`, 'error');
+    }
   });
 }
 
@@ -1676,60 +2232,13 @@ $('#confirm-ok').addEventListener('click', () => {
 });
 
 /* =========================================================================
-   EXPORT / IMPORT
-   ========================================================================= */
-$('#btn-export').addEventListener('click', async () => {
-  const data = {
-    schema: 'sm4all-v1',
-    exportedAt: Date.now(),
-    evaluations: state.evaluations
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `sm4all-export-${new Date().toISOString().slice(0, 10)}.json`;
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
-});
-
-$('#btn-import').addEventListener('click', () => $('#import-input').click());
-$('#import-input').addEventListener('change', async (e) => {
-  const f = e.target.files[0];
-  if (!f) return;
-  try {
-    const text = await f.text();
-    const data = JSON.parse(text);
-    if (!data.evaluations || !Array.isArray(data.evaluations)) throw new Error('Formato inválido');
-    confirmAction('Importar evaluaciones', `Se importarán ${data.evaluations.length} registros (los IDs existentes se sobreescriben). ¿Continuar?`, async () => {
-      for (const rec of data.evaluations) {
-        if (rec.id && rec.scores) await dbPut(rec);
-      }
-      state.evaluations = await dbAll();
-      renderList();
-      toast(`Importadas ${data.evaluations.length} evaluaciones`);
-    });
-  } catch (err) {
-    toast('Archivo inválido', 'error');
-  }
-  e.target.value = '';
-});
-
-/* =========================================================================
    INIT
    ========================================================================= */
 async function init() {
-  try {
-    await openDB();
-    state.evaluations = await dbAll();
-  } catch (e) {
-    console.error(e);
-    toast('Error al iniciar la base de datos', 'error');
-  }
   renderMatrix();
   resetPhotoArea();
   updateLocationDisplay();
-  // Register service worker
+  await checkAuth();
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
